@@ -12,7 +12,7 @@ class SceneMananger(object):
     def __init__(self):
         # self.go_to(TitleScene())
 
-        self.go_to(TextScrollScene(0))
+        self.go_to(MoveMouseScene())
 
     def go_to(self, scene):
         self.scene = scene
@@ -119,6 +119,42 @@ class GameScene(Scene):
                     sword.rotation = thePlayer.direction - 25
                     params = {'direction': thePlayer.direction, 'end': thePlayer.direction + 100}
                     animations.append(Animation("sword", params))'''
+
+
+class MazeScene(Scene):
+
+    def __init__(self):
+        super(MazeScene, self).__init__()
+        # Generate maze
+
+    def render(self, screen):
+        pass
+
+    def update(self, time):
+        pass
+
+    def handle_events(self, events):
+        pass
+
+
+class MoveMouseScene(Scene):
+    def __init__(self):
+        super(MoveMouseScene, self).__init__()
+        self.font = pygame.font.SysFont('Consolas', 20)
+        self.block = Block(pygame.Rect(100, 100, drawSize, drawSize), GREEN)
+        self.text = self.font.render('Move mouse inside the box.', True, WHITE)
+
+    def render(self, screen):
+        screen.blit(self.block.image, self.block.rect)
+        screen.blit(self.text, (150, 150))
+
+    def update(self, time):
+        if self.block.rect.collidepoint(pygame.mouse.get_pos()):
+            self.manager.go_to(GameScene(0))
+        pass
+
+    def handle_events(self, events):
+        pass
 
 
 class TitleScene(Scene):
