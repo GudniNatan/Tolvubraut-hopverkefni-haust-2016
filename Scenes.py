@@ -6,6 +6,7 @@ from Characters_sprites import *
 from Objects import *
 import random
 import codecs
+from generateMaze import Generator
 
 
 class SceneMananger(object):
@@ -123,14 +124,43 @@ class GameScene(Scene):
 
 class MazeScene(Scene):
 
-    def __init__(self):
+    def __init__(self, level):
         super(MazeScene, self).__init__()
         # Generate maze
-
+        self.level = level
+        print(level)
+        mazeGenerator = Generator()
+        maze = mazeGenerator.generate(0, 0, 2 + level, 2 + level)
+        levelDrawSize = drawSize # Ekki pæla of mikið í þessu, notum kannski seinna
+        topright = 6 * drawSize - ((level + level%2 -1) * drawSize)
+        bottomleft = topright + (level + 2) * drawSize * 2
+        print(maze)
+        self.block_group = pygame.sprite.Group()
+        if level % 2:
+            self.exit = Block(pygame.Rect(topright + drawSize, topright, levelDrawSize, levelDrawSize), GREEN)
+            self.entrance = Block(pygame.Rect(bottomleft - drawSize, bottomleft, levelDrawSize, levelDrawSize), BLUE)
+        else:
+            self.exit = Block(pygame.Rect(bottomleft - drawSize, bottomleft, levelDrawSize, levelDrawSize), GREEN)
+            self.entrance = Block(pygame.Rect(topright + drawSize, topright, levelDrawSize, levelDrawSize), BLUE)
+        for i in range(len(maze)):
+            for j in range(len(maze[i])):
+                if maze[i][j] == 0:
+                    if not (i == len(maze) - 2 and j == len(maze[i]) - 1):
+                        if not (i == 1 and j == 0):
+                            self.block_group.add(Block(pygame.Rect(i * levelDrawSize + topright, j * levelDrawSize + topright, levelDrawSize, levelDrawSize), BLACK))
     def render(self, screen):
-        pass
+        screen.fill(WHITE)
+        self.block_group.draw(screen)
+        screen.blit(self.exit.image, self.exit.rect)
+        screen.blit(self.entrance.image, self.entrance.rect)
 
     def update(self, time):
+        for block in self.block_group:
+            if block.rect.collidepoint(pygame.mouse.get_pos()):
+                #self.manager.go_to(GameOverScene())
+                print("lose")
+        if self.exit.rect.collidepoint(pygame.mouse.get_pos()):
+            self.manager.go_to(MazeScene(self.level+1))
         pass
 
     def handle_events(self, events):
@@ -141,17 +171,18 @@ class MoveMouseScene(Scene):
     def __init__(self):
         super(MoveMouseScene, self).__init__()
         self.font = pygame.font.SysFont('Consolas', 20)
-        self.block = Block(pygame.Rect(100, 100, drawSize, drawSize), GREEN)
+        self.block = Block(pygame.Rect(8 * drawSize, 7 * drawSize, drawSize, drawSize), GREEN)
         self.text = self.font.render('Move mouse inside the box.', True, WHITE)
 
     def render(self, screen):
+        screen.fill(BLACK)
         screen.blit(self.block.image, self.block.rect)
-        screen.blit(self.text, (150, 150))
+        screen.blit(self.text, (200, 150))
 
     def update(self, time):
         if self.block.rect.collidepoint(pygame.mouse.get_pos()):
-            self.manager.go_to(GameScene(0))
-        pass
+            print("true")
+            self.manager.go_to(MazeScene(0))
 
     def handle_events(self, events):
         pass
@@ -215,7 +246,6 @@ class TextScrollScene(Scene):
         self.text_number = text
 
     def render(self, screen):
-        # beware: ugly!
         screen.fill(BLACK)
         lines = self.livetext.splitlines()
         for i in range(len(lines)):
@@ -238,3 +268,19 @@ class TextScrollScene(Scene):
                         self.blanks += 1
                     else:
                         self.livetext += self.text[len(self.livetext)+self.blanks]
+
+
+class GameOverScene(Scene):
+    def __init__(self):
+        self.font = pygame.font.SysFont('Consolas', 56)
+        self.text = self.font.render('Game Over', True, WHITE)
+
+    def render(self, screen):
+        screen.fill(BLACK)
+        screen.blit(self.text, (130, 50))
+
+    def update(self, time):
+        pass
+
+    def handle_events(self, events):
+        pass
