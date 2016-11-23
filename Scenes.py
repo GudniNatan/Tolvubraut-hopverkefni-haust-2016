@@ -11,9 +11,8 @@ from generateMaze import Generator
 
 class SceneMananger(object):
     def __init__(self):
-        # self.go_to(TitleScene())
+        self.go_to(TitleScene())
 
-        self.go_to(MoveMouseScene())
 
     def go_to(self, scene):
         self.scene = scene
@@ -172,9 +171,10 @@ class MazeScene(Scene):
     def update(self, time):
         for block in self.block_group:
             if block.rect.collidepoint(pygame.mouse.get_pos()):
-                #self.manager.go_to(GameOverScene())
+                self.manager.go_to(GameOverScene())
                 print("lose")
         if not self.mazeBox.collidepoint(pygame.mouse.get_pos()):
+            self.manager.go_to(GameOverScene())
             print("outside game area")
         if self.exit.rect.collidepoint(pygame.mouse.get_pos()):
             self.manager.go_to(MazeScene(self.level+1))
@@ -205,7 +205,7 @@ class MoveMouseScene(Scene):
     def __init__(self):
         super(MoveMouseScene, self).__init__()
         self.font = pygame.font.SysFont('Consolas', 20)
-        self.block = Block(pygame.Rect(8 * drawSize, 7 * drawSize, drawSize, drawSize), GREEN)
+        self.block = Block(pygame.Rect(30 * drawSize, 16 * drawSize, drawSize, drawSize), GREEN)
         self.text = self.font.render('Move mouse inside the box.', True, WHITE)
 
     def render(self, screen):
@@ -240,8 +240,8 @@ class TitleScene(Scene):
         screen.fill(BLACK)
         text1 = self.font.render('Lokaverkefni', True, tuple(self.color))
         text2 = self.sfont.render('> press space to start <', True, WHITE)
-        screen.blit(text1, (130, 50))
-        screen.blit(text2, (100, 350))
+        screen.blit(text1, (450, 50))
+        screen.blit(text2, (420, 350))
 
     def update(self, time):
         pass
@@ -250,7 +250,7 @@ class TitleScene(Scene):
         for event in events:
             if event.type == KEYDOWN and event.key == K_SPACE:
                 self.mixer.fadeout(500)
-                self.manager.go_to(GameScene(0))
+                self.manager.go_to(MoveMouseScene())
             if event.type == animationEvent:
                 for i in range(3):
                     if self.colorLevel[i]:
@@ -306,15 +306,20 @@ class TextScrollScene(Scene):
 
 class GameOverScene(Scene):
     def __init__(self):
-        self.font = pygame.font.SysFont('Consolas', 56)
-        self.text = self.font.render('Game Over', True, WHITE)
+        font = pygame.font.SysFont('Consolas', 56)
+        small_font = pygame.font.SysFont('Consolas', 32)
+        self.text = font.render('Game Over', True, WHITE)
+        self.text2 = small_font.render('Press space to try again.', True, WHITE)
 
     def render(self, screen):
         screen.fill(BLACK)
-        screen.blit(self.text, (130, 50))
+        screen.blit(self.text, (500, 50))
+        screen.blit(self.text2, (440, 120))
 
     def update(self, time):
         pass
 
     def handle_events(self, events):
-        pass
+        for event in events:
+            if event.type == KEYDOWN and event.key == K_SPACE:
+                self.manager.go_to(MoveMouseScene())
