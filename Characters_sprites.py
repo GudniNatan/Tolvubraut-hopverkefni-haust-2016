@@ -7,7 +7,7 @@ from Methods import *
 
 
 class Character(pygame.sprite.Sprite):
-    def __init__(self, rect, charset, sprite_size_rect):
+    def __init__(self, rect, charset=0, sprite_size_rect=0):
         super(Character, self).__init__()
         self.collision_rect = rect
         self.vx = 0
@@ -69,6 +69,9 @@ class Character(pygame.sprite.Sprite):
 
     def update_sprite(self):
         sprite = 0
+        if self.charset == 0:
+            self.image = Block(self.collision_rect, ORANGE).image
+            return
         direction = self.direction
         (width, height, desired_width) = self.sprite_size_rect
         phase = int(self.walking_phase)
@@ -177,7 +180,7 @@ class NPC(Character):
 
     def update_path(self, grid, position, destination):
         # NPC Pathfinding
-        p = self.pathfinder.find_path(grid, position, destination, 8)
+        p = self.pathfinder.find_path(grid, position, destination)
         path = list()
         if p is not None:
             self.path = p.nodes
@@ -192,7 +195,7 @@ class Stalker(NPC):
         self.baseSpeed = 0.04
         self.followPlayer = True
 
-    def update_speed(self):
+    def update_speed(self, offset=tuple()):
         # Follows path
         path = self.path
         if path is None or not path:
@@ -202,15 +205,17 @@ class Stalker(NPC):
         speed = self.baseSpeed
         rect = self.collision_rect
         next_square = path[0].value
-        if next_square[0] < rect.right / drawSize:
+        if not offset:
+            offset = (0, 0)
+        if next_square[0] < rect.right + offset[0] / drawSize:
             self.vx = -speed
-        elif next_square[0] > rect.left / drawSize:
+        elif next_square[0] > rect.left + offset[0] / drawSize:
             self.vx = speed
         else:
             self.vx = 0
-        if next_square[1] < rect.bottom / drawSize:
+        if next_square[1] < rect.bottom + offset[1] / drawSize:
             self.vy = -speed
-        elif next_square[1] > rect.top / drawSize:
+        elif next_square[1] > rect.top + offset[1] / drawSize:
             self.vy = speed
         else:
             self.vy = 0

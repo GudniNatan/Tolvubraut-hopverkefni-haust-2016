@@ -103,10 +103,13 @@ class AStar:
         self.goal = goal
         self.start = start
         self.passcount = 0
+        print(start)
         first_node = self.handler.create_node(start, 0)
         if first_node is None:
+            print("no first node")
             return None
         if goal == start:
+            print("already there")
             return Path([first_node], 0)
         self.open_list.append([first_node, 0])
         self.open_set.add(first_node.tuple)
@@ -124,17 +127,21 @@ class AStar:
                     break
                 return self.trace_path(finish)
             index = self.getHighestPriorityNodeIndex(self.open_list)
+        print("no path found")
         return None
 
 
 class GridHandler:
     def __init__(self, grid):
         self.grid = grid
+        self.gridSize = (len(grid), len(grid[0]))
 
     def create_node(self, location, move_cost, parent=0):
         grid = self.grid
         val = location
-        if (0 <= val[0] < GRID_SIZE[0] * 2 + 1 and 0 <= val[1] < GRID_SIZE[1] * 2 + 1) and grid[val[0]][val[1]] == 0:
+        print(self.gridSize)
+        print(val)
+        if (0 <= val[0] < self.gridSize[0] and 0 <= val[1] < self.gridSize[1]) and grid[val[0]][val[1]] == 0:
             if not parent:
                 return Node(val, move_cost, parent)
             if grid[parent.value[0]][val[1]] or grid[val[0]][parent.value[1]]:
