@@ -195,7 +195,7 @@ class Stalker(NPC):
         self.baseSpeed = 0.04
         self.followPlayer = True
 
-    def update_speed(self, offset=tuple()):
+    def update_speed(self):
         # Follows path
         path = self.path
         if path is None or not path:
@@ -205,17 +205,15 @@ class Stalker(NPC):
         speed = self.baseSpeed
         rect = self.collision_rect
         next_square = path[0].value
-        if not offset:
-            offset = (0, 0)
-        if next_square[0] < rect.right + offset[0] / drawSize:
+        if next_square[0] < rect.right / drawSize:
             self.vx = -speed
-        elif next_square[0] > rect.left + offset[0] / drawSize:
+        elif next_square[0] > rect.left / drawSize:
             self.vx = speed
         else:
             self.vx = 0
-        if next_square[1] < rect.bottom + offset[1] / drawSize:
+        if next_square[1] < rect.bottom / drawSize:
             self.vy = -speed
-        elif next_square[1] > rect.top + offset[1] / drawSize:
+        elif next_square[1] > rect.top / drawSize:
             self.vy = speed
         else:
             self.vy = 0

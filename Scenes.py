@@ -129,6 +129,7 @@ class MazeScene(Scene):
         print("new level")
         self.level = level
         mazeGenerator = Generator()
+        self.grid = Grid((80, 80))
         self.maze = mazeGenerator.generate(0, 0, 2 + level, 2 + level)
         levelDrawSize = drawSize
         self.levelDrawSize = levelDrawSize
@@ -139,6 +140,7 @@ class MazeScene(Scene):
         mazeBox.h = mazeBox.w
         self.mazeBox = mazeBox
         self.block_group = pygame.sprite.Group()
+        self.godMode = True
         if level % 2:
             self.exit = Block(pygame.Rect(mazeBox.left + levelDrawSize, mazeBox.top, levelDrawSize, levelDrawSize), GREEN)
             self.entrance = Block(pygame.Rect(mazeBox.right - levelDrawSize*2, mazeBox.bottom - levelDrawSize, levelDrawSize, levelDrawSize), BLUE)
@@ -151,9 +153,13 @@ class MazeScene(Scene):
                     if not (i == len(self.maze) - 2 and j == len(self.maze[i]) - 1):
                         if not (i == 1 and j == 0):
                             self.block_group.add(Block(pygame.Rect(i * levelDrawSize + mazeBox.left, j * levelDrawSize + mazeBox.top, levelDrawSize, levelDrawSize), BLACK))
-        self.stalker = 0
+        self.stalker = None
         if level > 5:
             pygame.time.set_timer(stalkerEvent, 5000)  # Spawn stalker after 5 seconds
+        self.grid.update_grid(self.block_group, self.levelDrawSize)
+        for line in self.grid.grid:
+            print(line)
+
 
 
     def render(self, screen):
@@ -171,22 +177,21 @@ class MazeScene(Scene):
     def update(self, time):
         for block in self.block_group:
             if block.rect.collidepoint(pygame.mouse.get_pos()):
-                self.manager.go_to(GameOverScene())
+                if not self.godMode:
+                    self.manager.go_to(GameOverScene())
                 print("lose")
         if not self.mazeBox.collidepoint(pygame.mouse.get_pos()):
-            self.manager.go_to(GameOverScene())
+            if not self.godMode:
+                self.manager.go_to(GameOverScene())
             print("outside game area")
         if self.exit.rect.collidepoint(pygame.mouse.get_pos()):
             self.manager.go_to(MazeScene(self.level+1))
         if self.stalker:
-            mouse_grid_pos = ((pygame.mouse.get_pos()[0] - self.mazeBox.x) / self.levelDrawSize,(pygame.mouse.get_pos()[1] - self.mazeBox.y) / self.levelDrawSize)
-            stalker_grid_pos = ((self.stalker.collision_rect.centerx - self.mazeBox.x) / self.levelDrawSize,(self.stalker.collision_rect.centery - self.mazeBox.y) / self.levelDrawSize)
-            print(mouse_grid_pos)
-            print(stalker_grid_pos)
-            print(len(self.maze), len(self.maze[0]))
-            self.stalker.update_path(self.maze, stalker_grid_pos, mouse_grid_pos)
-            offset = (self.mazeBox.x, self.mazeBox.y)
-            self.stalker.update_speed(offset)
+            mouse_grid_pos = [pygame.mouse.get_pos()[0] / self.levelDrawSize, pygame.mouse.get_pos()[1] / self.levelDrawSize]
+            stalker_grid_pos = [self.stalker.collision_rect.x / self.levelDrawSize, self.stalker.collision_rect.x / self.levelDrawSize]
+
+            self.stalker.update_path(self.grid.grid, stalker_grid_pos, mouse_grid_pos)
+            self.stalker.update_speed()
             self.stalker.update_position(time, self.block_group)
 
     def handle_events(self, events):
@@ -194,8 +199,8 @@ class MazeScene(Scene):
             if event.type == stalkerEvent:
                 pygame.time.set_timer(stalkerEvent, 0)  # Stops timer after running once
                 stalkerRect = pygame.Rect(self.entrance.rect)
-                stalkerRect.h -= 2
-                stalkerRect.w -= 2
+                stalkerRect.h /= 2
+                stalkerRect.w /= 2
                 self.stalker = Stalker(stalkerRect, 0, 0)
 
         pass
@@ -206,7 +211,7 @@ class MoveMouseScene(Scene):
         super(MoveMouseScene, self).__init__()
         self.font = pygame.font.SysFont('Consolas', 20)
         self.block = Block(pygame.Rect(30 * drawSize, 16 * drawSize, drawSize, drawSize), GREEN)
-        self.text = self.font.render('Move mouse inside the box.', True, WHITE)
+        self.text = self.font.render('Move your mouse into the green box.', True, WHITE)
 
     def render(self, screen):
         screen.fill(BLACK)

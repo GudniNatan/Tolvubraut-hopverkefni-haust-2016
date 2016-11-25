@@ -67,20 +67,20 @@ class Grid(object):
         grid = [[0 for i in range((grid_size[1] * 2) + 1)] for j in range((grid_size[0] * 2) + 1)]
         self.grid = grid
 
-    def update_grid(self, collidables, resolution=1):
+    def update_grid(self, collidables, draw_size=drawSize, resolution=1):
         self.make_grid()
         grid = self.grid
         for obj in collidables:
             # Faster, but less reliable
             if resolution <= 1:
-                for x in xrange(obj.rect.left / drawSize, obj.rect.right / drawSize):
-                    for y in xrange(obj.rect.top / drawSize, obj.rect.bottom / drawSize):
+                for x in xrange(obj.rect.left / draw_size, obj.rect.right / draw_size):
+                    for y in xrange(obj.rect.top / draw_size, obj.rect.bottom / draw_size):
                         if 0 < x <= self.grid_size[0] * 2 and 0 < y <= self.grid_size[1] * 2:
                             grid[x][y] = 1
             # Slower, but more reliable
             else:
-                for x in xrange(resolution * obj.rect.left / drawSize, resolution * obj.rect.right / drawSize):
-                    for y in xrange(resolution * obj.rect.top / drawSize, resolution * obj.rect.bottom / drawSize):
+                for x in xrange(resolution * obj.rect.left / draw_size, resolution * obj.rect.right / draw_size):
+                    for y in xrange(resolution * obj.rect.top / draw_size, resolution * obj.rect.bottom / draw_size):
                         x2 = int(x / (resolution * 1.0))
                         y2 = int(y / (resolution * 1.0))
                         if 0 <= x2 <= self.grid_size[0] * 2 and 0 <= y2 <= self.grid_size[1] * 2:
