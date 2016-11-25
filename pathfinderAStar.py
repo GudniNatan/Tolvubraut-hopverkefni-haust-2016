@@ -121,6 +121,7 @@ class AStar:
                 break
             if finish:
                 if finish is None:
+                    print("no allowed nodes")
                     break
                 path = self.trace_path(finish)
                 if range != -1 and len(path.nodes) > search_range:
