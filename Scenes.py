@@ -7,6 +7,7 @@ from Objects import *
 import random
 import codecs
 from generateMaze import Generator
+import copy
 
 
 class SceneMananger(object):
@@ -129,32 +130,45 @@ class MazeScene(Scene):
         print("new level")
         self.level = level
         mazeGenerator = Generator()
+        self.grid = Grid(GRID_SIZE)
         self.maze = mazeGenerator.generate(0, 0, 2 + level, 2 + level)
         levelDrawSize = drawSize
         self.levelDrawSize = levelDrawSize
         mazeBox = pygame.Rect(0, 0, 0, 0)
-        mazeBox.x = 28 * levelDrawSize - ((level + level % 2 - 1) * levelDrawSize)  # Change the first number to move maze placement
+        mazeBox.x = 28 * levelDrawSize - ((level + level % 2 - 1) * levelDrawSize)  # Change the first number to move maze
         mazeBox.y = 15 * levelDrawSize - ((level + level % 2 - 1) * levelDrawSize)
         mazeBox.w = (level + 2) * levelDrawSize * 2 + levelDrawSize
         mazeBox.h = mazeBox.w
         self.mazeBox = mazeBox
         self.block_group = pygame.sprite.Group()
+        self.last_safe_pos = pygame.mouse.get_pos()
+        self.godMode = True
         if level % 2:
             self.exit = Block(pygame.Rect(mazeBox.left + levelDrawSize, mazeBox.top, levelDrawSize, levelDrawSize), GREEN)
             self.entrance = Block(pygame.Rect(mazeBox.right - levelDrawSize*2, mazeBox.bottom - levelDrawSize, levelDrawSize, levelDrawSize), BLUE)
+            topcap = copy.deepcopy(self.exit)
+            bottomcap = copy.deepcopy(self.entrance)
         else:
             self.exit = Block(pygame.Rect(mazeBox.right - levelDrawSize*2, mazeBox.bottom - levelDrawSize, levelDrawSize, levelDrawSize), GREEN)
             self.entrance = Block(pygame.Rect(mazeBox.left + levelDrawSize, mazeBox.top, levelDrawSize, levelDrawSize), BLUE)
+            topcap = copy.deepcopy(self.entrance)
+            bottomcap = copy.deepcopy(self.exit)
+
         for i in range(len(self.maze)):
             for j in range(len(self.maze[i])):
                 if self.maze[i][j] == 0:
                     if not (i == len(self.maze) - 2 and j == len(self.maze[i]) - 1):
                         if not (i == 1 and j == 0):
                             self.block_group.add(Block(pygame.Rect(i * levelDrawSize + mazeBox.left, j * levelDrawSize + mazeBox.top, levelDrawSize, levelDrawSize), BLACK))
-        self.stalker = 0
-        if level > 5:
+        self.stalker = None
+        if level >= 5:
             pygame.time.set_timer(stalkerEvent, 5000)  # Spawn stalker after 5 seconds
-
+        topcap.rect.y -= levelDrawSize
+        bottomcap.rect.y += levelDrawSize
+        self.grid.update_grid(pygame.sprite.Group(self.block_group, topcap, bottomcap), self.levelDrawSize)
+        for line in self.grid.grid:
+            print(line)
+        self.last_pos = self.entrance.rect.center
 
     def render(self, screen):
         screen.fill(WHITE)
@@ -164,41 +178,52 @@ class MazeScene(Scene):
         pygame.draw.rect(screen, BLACK, self.mazeBox, 3)
         if self.stalker:
             screen.blit(self.stalker.image, self.stalker.rect)
-            for node in self.stalker.pathBricks:  # Use this to see stalker pathfinding
-                screen.fill(RED, node)
-
 
     def update(self, time):
+        check_col = False
+        (relX,relY) = pygame.mouse.get_rel()
         for block in self.block_group:
             if block.rect.collidepoint(pygame.mouse.get_pos()):
-                self.manager.go_to(GameOverScene())
-                print("lose")
+                if not self.godMode:
+                    self.manager.go_to(GameOverScene())
+                else:
+                    check_col = True
         if not self.mazeBox.collidepoint(pygame.mouse.get_pos()):
-            self.manager.go_to(GameOverScene())
+            if not self.godMode:
+                self.manager.go_to(GameOverScene())
+            else:
+                check_col = True
             print("outside game area")
+        if not check_col:
+            self.last_pos = pygame.mouse.get_pos()
+        if check_col:
+            pygame.mouse.set_pos(self.last_pos)
         if self.exit.rect.collidepoint(pygame.mouse.get_pos()):
             self.manager.go_to(MazeScene(self.level+1))
-        if self.stalker:
-            mouse_grid_pos = ((pygame.mouse.get_pos()[0] - self.mazeBox.x) / self.levelDrawSize,(pygame.mouse.get_pos()[1] - self.mazeBox.y) / self.levelDrawSize)
-            stalker_grid_pos = ((self.stalker.collision_rect.centerx - self.mazeBox.x) / self.levelDrawSize,(self.stalker.collision_rect.centery - self.mazeBox.y) / self.levelDrawSize)
-            print(mouse_grid_pos)
-            print(stalker_grid_pos)
-            print(len(self.maze), len(self.maze[0]))
-            self.stalker.update_path(self.maze, stalker_grid_pos, mouse_grid_pos)
-            offset = (self.mazeBox.x, self.mazeBox.y)
-            self.stalker.update_speed(offset)
+        if self.stalker is not None:
+            self.stalker.update_speed()
             self.stalker.update_position(time, self.block_group)
 
     def handle_events(self, events):
         for event in events:
-            if event.type == stalkerEvent:
+            if event.type == KEYDOWN and event.key == K_ESCAPE:
+                self.manager.go_to(TitleScene())
+            if event.type == stalkerEvent and not self.stalker:
                 pygame.time.set_timer(stalkerEvent, 0)  # Stops timer after running once
                 stalkerRect = pygame.Rect(self.entrance.rect)
-                stalkerRect.h -= 2
-                stalkerRect.w -= 2
+                stalkerRect.h -= 0
+                stalkerRect.w -= 0
+                stalkerRect.center = self.entrance.rect.center
+                if self.level % 2:
+                    stalkerRect.y -= self.levelDrawSize
+                else:
+                    stalkerRect.y += self.levelDrawSize
                 self.stalker = Stalker(stalkerRect, 0, 0)
-
-        pass
+                pygame.time.set_timer(pathfindingEvent, 500)
+            if event.type == pathfindingEvent and self.stalker:
+                mouse_grid_pos = [pygame.mouse.get_pos()[0] / self.levelDrawSize, pygame.mouse.get_pos()[1] / self.levelDrawSize]
+                stalker_grid_pos = [self.stalker.collision_rect.x / self.levelDrawSize, self.stalker.collision_rect.y / self.levelDrawSize]
+                self.stalker.update_path(self.grid.grid, stalker_grid_pos, mouse_grid_pos)
 
 
 class MoveMouseScene(Scene):
@@ -206,7 +231,7 @@ class MoveMouseScene(Scene):
         super(MoveMouseScene, self).__init__()
         self.font = pygame.font.SysFont('Consolas', 20)
         self.block = Block(pygame.Rect(30 * drawSize, 16 * drawSize, drawSize, drawSize), GREEN)
-        self.text = self.font.render('Move mouse inside the box.', True, WHITE)
+        self.text = self.font.render('Move your mouse into the green box.', True, WHITE)
 
     def render(self, screen):
         screen.fill(BLACK)
