@@ -27,10 +27,13 @@ def main():
             running = False
             return
         manager.scene.handle_events(pygame.event.get())
+
+
         manager.scene.update(clock.get_time())
         manager.scene.render(screen)
         pygame.display.update()
         clock.tick()
+        print(clock.get_fps())
 
     pygame.quit()
     sys.exit()

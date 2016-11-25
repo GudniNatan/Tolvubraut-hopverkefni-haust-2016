@@ -159,6 +159,8 @@ class MazeScene(Scene):
         self.grid.update_grid(self.block_group, self.levelDrawSize)
         for line in self.grid.grid:
             print(line)
+        self.last_pos = self.entrance.rect.center
+
 
 
 
@@ -175,15 +177,28 @@ class MazeScene(Scene):
 
 
     def update(self, time):
+        check_col = False
+        (relX,relY) = pygame.mouse.get_rel()
         for block in self.block_group:
             if block.rect.collidepoint(pygame.mouse.get_pos()):
                 if not self.godMode:
                     self.manager.go_to(GameOverScene())
-                print("lose")
+                else:
+                    (posX,posY) = pygame.mouse.get_pos()
+                    check_col = True
+           
         if not self.mazeBox.collidepoint(pygame.mouse.get_pos()):
             if not self.godMode:
                 self.manager.go_to(GameOverScene())
+            else:
+                check_col = True
             print("outside game area")
+        if check_col == False:
+            self.last_pos = pygame.mouse.get_pos()
+        if check_col == True:
+            pygame.mouse.set_pos(self.last_pos)
+
+
         if self.exit.rect.collidepoint(pygame.mouse.get_pos()):
             self.manager.go_to(MazeScene(self.level+1))
         if self.stalker:
