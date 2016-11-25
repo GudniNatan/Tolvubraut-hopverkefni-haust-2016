@@ -12,7 +12,7 @@ def main():
     clock = pygame.time.Clock()
     pygame.display.set_caption('FOR3G3U')
 
-    #Setup
+    # Setup
     charset = pygame.image.load(os.path.join('images', 'charset.png')).convert_alpha()
     pygame.time.set_timer(pathfindingEvent, 500)
     pygame.time.set_timer(animationEvent, 1000 / 24)
@@ -27,13 +27,10 @@ def main():
             running = False
             return
         manager.scene.handle_events(pygame.event.get())
-
-
         manager.scene.update(clock.get_time())
         manager.scene.render(screen)
         pygame.display.update()
         clock.tick()
-        print(clock.get_fps())
 
     pygame.quit()
     sys.exit()

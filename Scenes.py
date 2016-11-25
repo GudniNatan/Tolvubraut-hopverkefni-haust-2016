@@ -165,12 +165,10 @@ class MazeScene(Scene):
             pygame.time.set_timer(stalkerEvent, 5000)  # Spawn stalker after 5 seconds
         topcap.rect.y -= levelDrawSize
         bottomcap.rect.y += levelDrawSize
-
         self.grid.update_grid(pygame.sprite.Group(self.block_group, topcap, bottomcap), self.levelDrawSize)
         for line in self.grid.grid:
             print(line)
         self.last_pos = self.entrance.rect.center
-
 
     def render(self, screen):
         screen.fill(WHITE)
@@ -189,21 +187,17 @@ class MazeScene(Scene):
                 if not self.godMode:
                     self.manager.go_to(GameOverScene())
                 else:
-                    (posX,posY) = pygame.mouse.get_pos()
                     check_col = True
-           
         if not self.mazeBox.collidepoint(pygame.mouse.get_pos()):
             if not self.godMode:
                 self.manager.go_to(GameOverScene())
             else:
                 check_col = True
             print("outside game area")
-        if check_col == False:
+        if not check_col:
             self.last_pos = pygame.mouse.get_pos()
-        if check_col == True:
+        if check_col:
             pygame.mouse.set_pos(self.last_pos)
-
-
         if self.exit.rect.collidepoint(pygame.mouse.get_pos()):
             self.manager.go_to(MazeScene(self.level+1))
         if self.stalker is not None:
