@@ -4,6 +4,7 @@ import threading
 import sys
 import os
 from Scenes import *
+from eztext import *
 
 def main():
     # Pygame stuff
@@ -18,7 +19,7 @@ def main():
     pygame.time.set_timer(animationEvent, 1000 / 24)
     gridImage = pygame.image.load(os.path.join('images', 'grid 16x16 transculent.png')).convert_alpha()
     gridImage = pygame.transform.scale(gridImage, (gridImage.get_rect().w * 24 / 16, gridImage.get_rect().h * 24 / 16))
-    manager = SceneMananger()
+    manager = SceneManager()
     pygame.mixer.init()
 
     running = True
@@ -27,10 +28,10 @@ def main():
             running = False
             return
         manager.scene.handle_events(pygame.event.get())
-        manager.scene.update(clock.get_time())
+        manager.scene.update(clock)
         manager.scene.render(screen)
         pygame.display.update()
-        clock.tick()
+        clock.tick(30)
 
     pygame.quit()
     sys.exit()

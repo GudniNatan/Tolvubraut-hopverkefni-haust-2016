@@ -136,8 +136,6 @@ class Character(pygame.sprite.Sprite):
         self.collision_rect.y = self.realY
         self.gridPos = [self.collision_rect.center[0] / drawSize, self.collision_rect.center[1] / drawSize]
         self.rect.midbottom = self.collision_rect.midbottom
-        if not self.charset:
-            self.rect = self.collision_rect
 
     def get_collision_box(self):
         return Box(self.collision_rect)

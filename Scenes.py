@@ -8,16 +8,19 @@ import random
 import codecs
 from generateMaze import Generator
 import copy
+from eztext import *
+import inputbox
 
 
-class SceneMananger(object):
+
+class SceneManager(object):
     def __init__(self):
         self.go_to(TitleScene())
-
 
     def go_to(self, scene):
         self.scene = scene
         self.scene.manager = self
+
 
 class Scene(object):
     def __init__(self):
@@ -33,104 +36,18 @@ class Scene(object):
         raise NotImplementedError
 
 
-class GameScene(Scene):
-    def __init__(self, level):
-        super(GameScene, self).__init__()
-        charset = pygame.image.load(os.path.join('images', 'charset.png')).convert_alpha()
-        self.entities = pygame.sprite.LayeredUpdates()
-        self.npcs = list()
-        self.animations = list()
-        self.collidables = list()
-        character_sprite_size = (16, 18, 24)
-        self.player = Player(pygame.Rect(30, 30, 15, drawSize / 2), charset.subsurface(pygame.Rect(0, 72, 47, 72)), character_sprite_size)
-
-        self.block_group = pygame.sprite.Group()
-        self.grid = Grid(GRID_SIZE)
-
-        f = open(os.path.join('rooms', 'room' + str(level)) + ".txt", 'r')
-        lines = f.readlines()
-        for i in range(len(lines)):
-            for j in range(len(lines[i])):
-                if lines[i][j] == "W":
-                    rect = pygame.Rect(j * drawSize, i * drawSize, drawSize, drawSize)
-                    self.block_group.add(Block(rect, BLACK))
-                if lines[i][j] == "S":
-                    stalker = Stalker(pygame.Rect(j * drawSize, i * drawSize, 15, drawSize / 2), charset.subsurface(pygame.Rect(48, 72, 47, 72)), character_sprite_size)
-                    self.npcs.append(stalker)
-
-        '''for i in range(GRID_SIZE[0] * 2):
-                block1 = (Block(pygame.Rect(i * drawSize, 0, drawSize, drawSize), BLACK))
-                block2 = (Block(pygame.Rect(i * drawSize, (GRID_SIZE[1] * 2 - 1) * drawSize, drawSize, drawSize), BLACK))
-                self.block_group.add(block1, block2)
-        for i in range(GRID_SIZE[1] * 2):
-                block1 = (Block(pygame.Rect(0, i * drawSize, drawSize, drawSize), BLACK))
-                block2 = (Block(pygame.Rect((GRID_SIZE[0] * 2 - 1) * drawSize, i * drawSize, drawSize, drawSize), BLACK))
-                self.block_group.add(block1, block2)'''
-        self.collidables.extend(self.block_group)
-
-        self.entities.add(self.player, self.npcs)
-        self.character_collision_boxes = [char.get_collision_box() for char in self.entities]
-        self.grid.update_grid(self.collidables + self.character_collision_boxes)
-
-    def render(self, screen):
-        screen.fill(WHITE)
-        self.block_group.draw(screen)
-        self.entities.draw(screen)
-
-    def update(self, time):
-        for sprite in self.entities.sprites():
-            self.entities.change_layer(sprite, sprite.rect.centery)
-        self.character_collision_boxes = [entity.get_collision_box() for entity in self.entities]
-        for entity in self.entities:
-            if type(entity) is not Player:
-                entity.update_speed()
-            entity.update_position(time, self.collidables + self.character_collision_boxes)
-
-    def handle_events(self, events):
-        for event in events:
-            if event.type == KEYDOWN and event.key == K_ESCAPE:
-                self.manager.go_to(TitleScene())
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_z:
-                pygame.event.post(pygame.event.Event(swordSwingEvent))
-            if event.type == pygame.KEYDOWN or event.type == pygame.KEYUP:
-                self.player.update_speed()
-            if event.type == pathfindingEvent:
-                for char in self.npcs:
-                    if type(char) is Stalker:
-                        char.update_path(self.grid.grid, char.gridPos, self.player.gridPos)
-            if event.type == updateGridEvent:
-                self.grid.update_grid(self.collidables + self.character_collision_boxes)
-            if event.type == animationEvent:
-                # Update all active animations
-                for s in self.animations:
-                    '''if s.name == "sword":
-                        if sword.rotation < s.end and s.direction == self.player.direction:
-                            sword.display = True
-                            sword.rot_center(50)
-                        else:
-                            sword.display = False
-                            sword.rotation = 0
-                            animations.remove(s)'''
-                for char in self.entities:
-                    if char.moving:
-                        char.walking_phase = (char.walking_phase + 0.5) % 3
-                        char.update_sprite()
-            if event.type == swordSwingEvent:
-                '''if Animation("sword") not in animations:
-                    sword.rotation = thePlayer.direction - 25
-                    params = {'direction': thePlayer.direction, 'end': thePlayer.direction + 100}
-                    animations.append(Animation("sword", params))'''
-
-
 class MazeScene(Scene):
 
-    def __init__(self, level):
+    def __init__(self, level, difficulty=0):
         super(MazeScene, self).__init__()
         # Generate maze
         print("new level")
         self.level = level
+        print(self.level)
         mazeGenerator = Generator()
         self.grid = Grid(GRID_SIZE)
+        if level > 14:
+            level = 14
         self.maze = mazeGenerator.generate(0, 0, 2 + level, 2 + level)
         levelDrawSize = drawSize
         self.levelDrawSize = levelDrawSize
@@ -142,8 +59,20 @@ class MazeScene(Scene):
         self.mazeBox = mazeBox
         self.block_group = pygame.sprite.Group()
         self.last_safe_pos = pygame.mouse.get_pos()
-        self.godMode = True
-        if level % 2:
+        if difficulty == 0:
+            self.godMode = True
+        if difficulty == 1:
+            self.godMode = True
+        elif difficulty == 2:
+            self.godMode = False
+        self.difficulty = difficulty
+        self.floor_tile = pygame.image.load(os.path.join('images', 'floor.png')).convert_alpha()
+        self.floor_tile = pygame.transform.smoothscale(self.floor_tile, (self.levelDrawSize, self.levelDrawSize))
+        self.wall_tile = pygame.image.load(os.path.join('images', 'steinn.png')).convert_alpha()
+        self.wall_tile = pygame.transform.smoothscale(self.wall_tile, (self.levelDrawSize, self.levelDrawSize))
+
+
+        if self.level % 2:
             self.exit = Block(pygame.Rect(mazeBox.left + levelDrawSize, mazeBox.top, levelDrawSize, levelDrawSize), GREEN)
             self.entrance = Block(pygame.Rect(mazeBox.right - levelDrawSize*2, mazeBox.bottom - levelDrawSize, levelDrawSize, levelDrawSize), BLUE)
             topcap = copy.deepcopy(self.exit)
@@ -159,29 +88,31 @@ class MazeScene(Scene):
                 if self.maze[i][j] == 0:
                     if not (i == len(self.maze) - 2 and j == len(self.maze[i]) - 1):
                         if not (i == 1 and j == 0):
-                            self.block_group.add(Block(pygame.Rect(i * levelDrawSize + mazeBox.left, j * levelDrawSize + mazeBox.top, levelDrawSize, levelDrawSize), BLACK))
+                            self.block_group.add(Block(pygame.Rect(i * levelDrawSize + mazeBox.left, j * levelDrawSize + mazeBox.top, levelDrawSize, levelDrawSize), BLACK, self.wall_tile))
         self.stalker = None
-        if level >= 5:
+        if level >= 5 and difficulty > 0:
             pygame.time.set_timer(stalkerEvent, 5000)  # Spawn stalker after 5 seconds
         topcap.rect.y -= levelDrawSize
         bottomcap.rect.y += levelDrawSize
         self.grid.update_grid(pygame.sprite.Group(self.block_group, topcap, bottomcap), self.levelDrawSize)
-        for line in self.grid.grid:
-            print(line)
         self.last_pos = self.entrance.rect.center
 
     def render(self, screen):
         screen.fill(WHITE)
+        for i in xrange(self.mazeBox.w / self.levelDrawSize):
+            for j in xrange(self.mazeBox.h / self.levelDrawSize):
+                screen.blit(self.floor_tile, (i * self.levelDrawSize + self.mazeBox.left, j * self.levelDrawSize + self.mazeBox.top))
+
         self.block_group.draw(screen)
         screen.blit(self.exit.image, self.exit.rect)
         screen.blit(self.entrance.image, self.entrance.rect)
-        pygame.draw.rect(screen, BLACK, self.mazeBox, 3)
         if self.stalker:
             screen.blit(self.stalker.image, self.stalker.rect)
+        pygame.draw.rect(screen, BLACK, self.mazeBox, 3)
+
 
     def update(self, time):
         check_col = False
-        (relX,relY) = pygame.mouse.get_rel()
         for block in self.block_group:
             if block.rect.collidepoint(pygame.mouse.get_pos()):
                 if not self.godMode:
@@ -194,15 +125,30 @@ class MazeScene(Scene):
             else:
                 check_col = True
             print("outside game area")
+        if ((self.last_pos[0] - pygame.mouse.get_pos()[0]) ** 2 + (self.last_pos[1] - pygame.mouse.get_pos()[1]) ** 2 > self.levelDrawSize ** 2):
+            coords1 = ((self.last_pos[0] + pygame.mouse.get_pos()[0] * 2) / 3, (self.last_pos[1] + pygame.mouse.get_pos()[1] * 2) / 3)
+            coords2 = ((self.last_pos[0] + pygame.mouse.get_pos()[0]) / 2, (self.last_pos[1] + pygame.mouse.get_pos()[1]) / 2)
+            coords3 = ((self.last_pos[0]*2 + pygame.mouse.get_pos()[0]) / 3, (self.last_pos[1]*2 + pygame.mouse.get_pos()[1]) / 3)
+            print(self.last_pos)
+            print(coords1)
+            print(pygame.mouse.get_pos())
+            for block in self.block_group:
+                if block.rect.collidepoint(coords1) or block.rect.collidepoint(coords2) or block.rect.collidepoint(coords3):
+                    if not self.godMode:
+                        self.manager.go_to(GameOverScene())
+                    else:
+                        check_col = True
         if not check_col:
             self.last_pos = pygame.mouse.get_pos()
-        if check_col:
+        else:
             pygame.mouse.set_pos(self.last_pos)
         if self.exit.rect.collidepoint(pygame.mouse.get_pos()):
-            self.manager.go_to(MazeScene(self.level+1))
+            self.manager.go_to(MazeScene(self.level+1, self.difficulty))
         if self.stalker is not None:
             self.stalker.update_speed()
-            self.stalker.update_position(time, self.block_group)
+            self.stalker.update_position(time.get_time(), self.block_group)
+            if self.stalker.rect.collidepoint(pygame.mouse.get_pos()):
+                self.manager.go_to(GameOverScene())
 
     def handle_events(self, events):
         for event in events:
@@ -211,27 +157,28 @@ class MazeScene(Scene):
             if event.type == stalkerEvent and not self.stalker:
                 pygame.time.set_timer(stalkerEvent, 0)  # Stops timer after running once
                 stalkerRect = pygame.Rect(self.entrance.rect)
-                stalkerRect.h -= 0
-                stalkerRect.w -= 0
                 stalkerRect.center = self.entrance.rect.center
-                if self.level % 2:
-                    stalkerRect.y -= self.levelDrawSize
-                else:
-                    stalkerRect.y += self.levelDrawSize
                 self.stalker = Stalker(stalkerRect, 0, 0)
+                self.stalker.baseSpeed += (-0.05) + self.level * 0.01
+                pygame.event.post(pygame.event.Event(pathfindingEvent))
                 pygame.time.set_timer(pathfindingEvent, 500)
             if event.type == pathfindingEvent and self.stalker:
                 mouse_grid_pos = [pygame.mouse.get_pos()[0] / self.levelDrawSize, pygame.mouse.get_pos()[1] / self.levelDrawSize]
                 stalker_grid_pos = [self.stalker.collision_rect.x / self.levelDrawSize, self.stalker.collision_rect.y / self.levelDrawSize]
                 self.stalker.update_path(self.grid.grid, stalker_grid_pos, mouse_grid_pos)
-
+    def returnLevel():
+        if self.level:
+            return self.level
+        else:
+            return 0
 
 class MoveMouseScene(Scene):
-    def __init__(self):
+    def __init__(self, difficulty):
         super(MoveMouseScene, self).__init__()
         self.font = pygame.font.SysFont('Consolas', 20)
         self.block = Block(pygame.Rect(30 * drawSize, 16 * drawSize, drawSize, drawSize), GREEN)
         self.text = self.font.render('Move your mouse into the green box.', True, WHITE)
+        self.difficulty = difficulty
 
     def render(self, screen):
         screen.fill(BLACK)
@@ -241,7 +188,7 @@ class MoveMouseScene(Scene):
     def update(self, time):
         if self.block.rect.collidepoint(pygame.mouse.get_pos()):
             print("true")
-            self.manager.go_to(MazeScene(0))
+            self.manager.go_to(MazeScene(0, self.difficulty))
 
     def handle_events(self, events):
         pass
@@ -254,28 +201,44 @@ class TitleScene(Scene):
         self.font = pygame.font.SysFont('Consolas', 56)
         self.sfont = pygame.font.SysFont('Consolas', 32)
         self.mixer = pygame.mixer.Channel(0)
-        self.mixer.set_volume(0.8)
+        self.mixer.set_volume(0.3)
         self.music = pygame.mixer.Sound(os.path.join('sounds', 'abba lite.ogg'))
         self.mixer.play(self.music)
         print("music")
         self.color = [50, 50, 50]
         self.colorLevel = [True, True, True]
+        self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
+        self.text2 = self.sfont.render('Choose your difficulty: ', True, WHITE)
+        #self.txtbx = eztext.Input(maxlength=45, color=(255,0,0), prompt='type here: ')
+        self.difficultyText = list()
+        self.difficultyText.append(SimpleSprite((420, 450), self.sfont.render('babby Mode', True, WHITE)))
+        self.difficultyText.append(SimpleSprite((420, 500), self.sfont.render('normal Mode', True, WHITE)))
+        self.difficultyText.append(SimpleSprite((420, 550), self.sfont.render('spergstreme', True, WHITE)))
+        self.menutext = pygame.sprite.Group(self.difficultyText)
+        self.selected = 0
+
 
     def render(self, screen):
+        self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
+        #screen.blit(self.txtbx, (450, 200))
+
         screen.fill(BLACK)
-        text1 = self.font.render('Lokaverkefni', True, tuple(self.color))
-        text2 = self.sfont.render('> press space to start <', True, WHITE)
-        screen.blit(text1, (450, 50))
-        screen.blit(text2, (420, 350))
+        screen.blit(self.titletext, (450, 50))
+        screen.blit(self.text2, (420, 350))
+        self.menutext.draw(screen)
+        pygame.draw.rect(screen, WHITE, self.difficultyText[self.selected].rect, 3)
+
 
     def update(self, time):
         pass
 
     def handle_events(self, events):
         for event in events:
-            if event.type == KEYDOWN and event.key == K_SPACE:
+            if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_RETURN):
                 self.mixer.fadeout(500)
-                self.manager.go_to(MoveMouseScene())
+                self.manager.go_to(MoveMouseScene(self.selected))
+            if event.type == KEYDOWN and event.key == K_ESCAPE:
+                pygame.event.post(pygame.event.Event(QUIT))
             if event.type == animationEvent:
                 for i in range(3):
                     if self.colorLevel[i]:
@@ -288,6 +251,12 @@ class TitleScene(Scene):
                         if self.color[i] <= 0:
                             self.color[i] = 0
                             self.colorLevel[i] = True
+            if event.type == KEYDOWN and event.key == K_UP:
+                self.selected -= 1
+                self.selected %= 3
+            if event.type == KEYDOWN and event.key == K_DOWN:
+                self.selected += 1
+                self.selected %= 3
 
 
 class TextScrollScene(Scene):
@@ -331,20 +300,27 @@ class TextScrollScene(Scene):
 
 class GameOverScene(Scene):
     def __init__(self):
+        self.mixer = pygame.mixer.Channel(0)
+        self.mixer.set_volume(0.8)
+        self.music = pygame.mixer.Sound(os.path.join('sounds', 'triggered.ogg'))
+        self.mixer.play(self.music)
+
         font = pygame.font.SysFont('Consolas', 56)
         small_font = pygame.font.SysFont('Consolas', 32)
         self.text = font.render('Game Over', True, WHITE)
         self.text2 = small_font.render('Press space to try again.', True, WHITE)
-        #self.mixer = pygame.mixer.Channel(0)
-        #self.mixer.set_volume(0.8)
-        #self.music = pygame.mixer.Sound(os.path.join('sounds', 'triggered.mp3'))
-        #self.mixer.play(self.music)
-        #print("music")
+        self.text3 = small_font.render('want to submit to leaderboards?', True, WHITE)
+        #text_width, text_height = small_font.size("self.text3")
+        #screen = pygame.display.set_mode((100, 100))
+        self.inp = ask("what is your name?") #inp will equal whatever the input is
+
 
     def render(self, screen):
         screen.fill(BLACK)
         screen.blit(self.text, (500, 50))
         screen.blit(self.text2, (440, 120))
+        screen.blit(self.text3, (440, 200))
+        screen.blit(self.inp, (440, 300))
 
     def update(self, time):
         pass
@@ -352,4 +328,5 @@ class GameOverScene(Scene):
     def handle_events(self, events):
         for event in events:
             if event.type == KEYDOWN and event.key == K_SPACE:
-                self.manager.go_to(MoveMouseScene())
+                self.manager.go_to(TitleScene())
+
