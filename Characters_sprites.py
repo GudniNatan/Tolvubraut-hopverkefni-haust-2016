@@ -7,7 +7,7 @@ from Methods import *
 
 
 class Character(pygame.sprite.Sprite):
-    def __init__(self, rect, charset, sprite_size_rect):
+    def __init__(self, rect, charset=0, sprite_size_rect=0):
         super(Character, self).__init__()
         self.collision_rect = rect
         self.vx = 0
@@ -69,6 +69,9 @@ class Character(pygame.sprite.Sprite):
 
     def update_sprite(self):
         sprite = 0
+        if self.charset == 0:
+            self.image = Block(self.collision_rect, ORANGE).image
+            return
         direction = self.direction
         (width, height, desired_width) = self.sprite_size_rect
         phase = int(self.walking_phase)
@@ -133,6 +136,8 @@ class Character(pygame.sprite.Sprite):
         self.collision_rect.y = self.realY
         self.gridPos = [self.collision_rect.center[0] / drawSize, self.collision_rect.center[1] / drawSize]
         self.rect.midbottom = self.collision_rect.midbottom
+        if not self.charset:
+            self.rect = self.collision_rect
 
     def get_collision_box(self):
         return Box(self.collision_rect)
@@ -165,7 +170,8 @@ class Player(Character):
                 self.vy = 0
             if keys[K_RIGHT] == keys[K_LEFT]:
                 self.vx = 0
-        self.set_sprite_direction()
+        if self.charset:
+            self.set_sprite_direction()
 
 
 class NPC(Character):
@@ -177,7 +183,7 @@ class NPC(Character):
 
     def update_path(self, grid, position, destination):
         # NPC Pathfinding
-        p = self.pathfinder.find_path(grid, position, destination, 8)
+        p = self.pathfinder.find_path(grid, position, destination)
         path = list()
         if p is not None:
             self.path = p.nodes
@@ -189,7 +195,7 @@ class NPC(Character):
 class Stalker(NPC):
     def __init__(self, rect, charset, sprite_size_rect):
         super(Stalker, self).__init__(rect, charset, sprite_size_rect)
-        self.baseSpeed = 0.04
+        self.baseSpeed = 0.09
         self.followPlayer = True
 
     def update_speed(self):
@@ -201,21 +207,24 @@ class Stalker(NPC):
             return
         speed = self.baseSpeed
         rect = self.collision_rect
-        next_square = path[0].value
-        if next_square[0] < rect.right / drawSize:
-            self.vx = -speed
-        elif next_square[0] > rect.left / drawSize:
+        next_loc = path[0].value
+        next_square = pygame.Rect(next_loc[0] * drawSize, next_loc[1] * drawSize, drawSize, drawSize)
+        if next_square.contains(rect):
+            self.path.pop(0)
+            self.update_speed()
+            return
+        if rect.right <= next_square.right and rect.left < next_square.left:
             self.vx = speed
+        elif rect.left >= next_square.left and rect.right > next_square.right:
+            self.vx = -speed
         else:
             self.vx = 0
-        if next_square[1] < rect.bottom / drawSize:
-            self.vy = -speed
-        elif next_square[1] > rect.top / drawSize:
+        if rect.bottom <= next_square.bottom and rect.top < next_square.top:
             self.vy = speed
+        elif rect.top >= next_square.top and rect.bottom > next_square.bottom:
+            self.vy = -speed
         else:
             self.vy = 0
-        self.set_sprite_direction()
-
-        if self.vx == self.vy == 0:
-            self.path.pop(0)
+        if self.charset:
+            self.set_sprite_direction()
 
