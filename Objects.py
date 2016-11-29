@@ -14,37 +14,23 @@ class Box(object):
 
 
 class Block(pygame.sprite.Sprite): # Simple block
-    def __init__(self, rect, color):
+    def __init__(self, rect, color, image=None):
         super(Block, self).__init__()
         self.image = pygame.Surface([rect.w, rect.h])
         self.image.fill(color)
+        if image is not None:
+            self.image = image
         self.rect = self.image.get_rect()
         self.rect.topleft = rect.topleft
+        self.image = pygame.transform.scale(self.image, (self.rect.w, self.rect.h))
 
 
-class Sword(object):
-    def __init__(self, x, y, w, h, image):
-        self.originalRect = pygame.Rect(x, y, w, h)
-        self.image = pygame.transform.scale(image, (w, h))
-        self.rotation = 0
-        self.surface = pygame.transform.scale(image, (w, h))
-        self.rect = pygame.Rect(self.originalRect)
-        self.display = False
-
-    def rot_center(self, angle):
-        """rotate an image while keeping its center"""
-        self.rotation += angle
-        rot_image = pygame.transform.rotate(self.image, self.rotation).convert_alpha()
-        rot_rect = rot_image.get_rect(center=self.originalRect.center)
-        rot_rect.x = self.originalRect.bottomright[0] - rot_rect.bottomright[0]
-        rot_rect.y = self.originalRect.bottomright[1] - rot_rect.bottomright[1]
-        self.rect = pygame.Rect(self.originalRect.x + rot_rect.x, self.originalRect.y + rot_rect.y, self.originalRect.w - rot_rect.x * 2, self.originalRect.h - rot_rect.y * 2)
-        self.surface = pygame.transform.flip(rot_image, True, False)
-
-    def update_pos(self, pos):
-        self.originalRect.center = pos
-        self.rect.center = pos
-
+class SimpleSprite(pygame.sprite.Sprite):
+    def __init__(self, top_left_point, surface):
+        super(SimpleSprite, self).__init__()
+        self.image = surface
+        self.rect = surface.get_rect()
+        self.rect.topleft = top_left_point
 
 class Animation(object):
     def __init__(self, name, params=dict()):
@@ -67,20 +53,20 @@ class Grid(object):
         grid = [[0 for i in range((grid_size[1] * 2) + 1)] for j in range((grid_size[0] * 2) + 1)]
         self.grid = grid
 
-    def update_grid(self, collidables, resolution=1):
+    def update_grid(self, collidables, draw_size=drawSize, resolution=1):
         self.make_grid()
         grid = self.grid
         for obj in collidables:
             # Faster, but less reliable
             if resolution <= 1:
-                for x in xrange(obj.rect.left / drawSize, obj.rect.right / drawSize):
-                    for y in xrange(obj.rect.top / drawSize, obj.rect.bottom / drawSize):
+                for x in xrange(obj.rect.left / draw_size, obj.rect.right / draw_size):
+                    for y in xrange(obj.rect.top / draw_size, obj.rect.bottom / draw_size):
                         if 0 < x <= self.grid_size[0] * 2 and 0 < y <= self.grid_size[1] * 2:
                             grid[x][y] = 1
             # Slower, but more reliable
             else:
-                for x in xrange(resolution * obj.rect.left / drawSize, resolution * obj.rect.right / drawSize):
-                    for y in xrange(resolution * obj.rect.top / drawSize, resolution * obj.rect.bottom / drawSize):
+                for x in xrange(resolution * obj.rect.left / draw_size, resolution * obj.rect.right / draw_size):
+                    for y in xrange(resolution * obj.rect.top / draw_size, resolution * obj.rect.bottom / draw_size):
                         x2 = int(x / (resolution * 1.0))
                         y2 = int(y / (resolution * 1.0))
                         if 0 <= x2 <= self.grid_size[0] * 2 and 0 <= y2 <= self.grid_size[1] * 2:
