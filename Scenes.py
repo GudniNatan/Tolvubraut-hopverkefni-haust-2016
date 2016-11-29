@@ -8,6 +8,9 @@ import random
 import codecs
 from generateMaze import Generator
 import copy
+from eztext import *
+import inputbox
+
 
 
 class SceneManager(object):
@@ -40,6 +43,7 @@ class MazeScene(Scene):
         # Generate maze
         print("new level")
         self.level = level
+        print(self.level)
         mazeGenerator = Generator()
         self.grid = Grid(GRID_SIZE)
         if level > 14:
@@ -162,7 +166,11 @@ class MazeScene(Scene):
                 mouse_grid_pos = [pygame.mouse.get_pos()[0] / self.levelDrawSize, pygame.mouse.get_pos()[1] / self.levelDrawSize]
                 stalker_grid_pos = [self.stalker.collision_rect.x / self.levelDrawSize, self.stalker.collision_rect.y / self.levelDrawSize]
                 self.stalker.update_path(self.grid.grid, stalker_grid_pos, mouse_grid_pos)
-
+    def returnLevel():
+        if self.level:
+            return self.level
+        else:
+            return 0
 
 class MoveMouseScene(Scene):
     def __init__(self, difficulty):
@@ -193,7 +201,7 @@ class TitleScene(Scene):
         self.font = pygame.font.SysFont('Consolas', 56)
         self.sfont = pygame.font.SysFont('Consolas', 32)
         self.mixer = pygame.mixer.Channel(0)
-        self.mixer.set_volume(0.8)
+        self.mixer.set_volume(0.3)
         self.music = pygame.mixer.Sound(os.path.join('sounds', 'abba lite.ogg'))
         self.mixer.play(self.music)
         print("music")
@@ -201,16 +209,18 @@ class TitleScene(Scene):
         self.colorLevel = [True, True, True]
         self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
         self.text2 = self.sfont.render('Choose your difficulty: ', True, WHITE)
+        #self.txtbx = eztext.Input(maxlength=45, color=(255,0,0), prompt='type here: ')
         self.difficultyText = list()
-        self.difficultyText.append(SimpleSprite((420, 450), self.sfont.render('Easy Mode', True, WHITE)))
-        self.difficultyText.append(SimpleSprite((420, 500), self.sfont.render('Hard Mode', True, WHITE)))
-        self.difficultyText.append(SimpleSprite((420, 550), self.sfont.render('EXTREME MODE', True, WHITE)))
+        self.difficultyText.append(SimpleSprite((420, 450), self.sfont.render('babby Mode', True, WHITE)))
+        self.difficultyText.append(SimpleSprite((420, 500), self.sfont.render('normal Mode', True, WHITE)))
+        self.difficultyText.append(SimpleSprite((420, 550), self.sfont.render('spergstreme', True, WHITE)))
         self.menutext = pygame.sprite.Group(self.difficultyText)
         self.selected = 0
 
 
     def render(self, screen):
         self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
+        #screen.blit(self.txtbx, (450, 200))
 
         screen.fill(BLACK)
         screen.blit(self.titletext, (450, 50))
@@ -290,15 +300,27 @@ class TextScrollScene(Scene):
 
 class GameOverScene(Scene):
     def __init__(self):
+        self.mixer = pygame.mixer.Channel(0)
+        self.mixer.set_volume(0.8)
+        self.music = pygame.mixer.Sound(os.path.join('sounds', 'triggered.ogg'))
+        self.mixer.play(self.music)
+
         font = pygame.font.SysFont('Consolas', 56)
         small_font = pygame.font.SysFont('Consolas', 32)
         self.text = font.render('Game Over', True, WHITE)
         self.text2 = small_font.render('Press space to try again.', True, WHITE)
+        self.text3 = small_font.render('want to submit to leaderboards?', True, WHITE)
+        #text_width, text_height = small_font.size("self.text3")
+        #screen = pygame.display.set_mode((100, 100))
+        self.inp = ask("what is your name?") #inp will equal whatever the input is
+
 
     def render(self, screen):
         screen.fill(BLACK)
         screen.blit(self.text, (500, 50))
         screen.blit(self.text2, (440, 120))
+        screen.blit(self.text3, (440, 200))
+        screen.blit(self.inp, (440, 300))
 
     def update(self, time):
         pass
