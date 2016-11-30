@@ -159,38 +159,6 @@ class MazeScene(Scene):
         pygame.draw.rect(screen, BLACK, self.mazeBox, 3)
 
     def update(self, time):
-        check_col = False
-        for block in self.block_group:
-            if block.rect.collidepoint(pygame.mouse.get_pos()):
-                if not self.godMode:
-                    self.manager.go_to(GameOverScene())
-                else:
-                    check_col = True
-        if not self.mazeBox.collidepoint(pygame.mouse.get_pos()):
-            if not self.godMode:
-                self.manager.go_to(GameOverScene())
-            else:
-                check_col = True
-            print("outside game area")
-        if ((self.last_pos[0] - pygame.mouse.get_pos()[0]) ** 2 + (self.last_pos[1] - pygame.mouse.get_pos()[1]) ** 2 > self.levelDrawSize ** 2):
-            coords1 = ((self.last_pos[0] + pygame.mouse.get_pos()[0] * 2) / 3, (self.last_pos[1] + pygame.mouse.get_pos()[1] * 2) / 3)
-            coords2 = ((self.last_pos[0] + pygame.mouse.get_pos()[0]) / 2, (self.last_pos[1] + pygame.mouse.get_pos()[1]) / 2)
-            coords3 = ((self.last_pos[0]*2 + pygame.mouse.get_pos()[0]) / 3, (self.last_pos[1]*2 + pygame.mouse.get_pos()[1]) / 3)
-            print(self.last_pos)
-            print(coords1)
-            print(pygame.mouse.get_pos())
-            for block in self.block_group:
-                if block.rect.collidepoint(coords1) or block.rect.collidepoint(coords2) or block.rect.collidepoint(coords3):
-                    if not self.godMode:
-                        self.manager.go_to(GameOverScene())
-                    else:
-                        check_col = True
-        if not check_col:
-            self.last_pos = pygame.mouse.get_pos()
-        else:
-            pygame.mouse.set_pos(self.last_pos)
-        if self.exit.rect.collidepoint(pygame.mouse.get_pos()):
-            self.manager.go_to(MazeScene(self.level+1, self.difficulty))
         if self.stalker is not None:
             self.stalker.update_speed()
             self.stalker.update_position(time.get_time(), self.block_group)
@@ -213,6 +181,40 @@ class MazeScene(Scene):
                 mouse_grid_pos = [pygame.mouse.get_pos()[0] / self.levelDrawSize, pygame.mouse.get_pos()[1] / self.levelDrawSize]
                 stalker_grid_pos = [self.stalker.collision_rect.x / self.levelDrawSize, self.stalker.collision_rect.y / self.levelDrawSize]
                 self.stalker.update_path(self.grid.grid, stalker_grid_pos, mouse_grid_pos)
+            if event.type == MOUSEMOTION:
+                check_col = False
+                for block in self.block_group:
+                    if block.rect.collidepoint(pygame.mouse.get_pos()):
+                        if not self.godMode:
+                            self.manager.go_to(GameOverScene())
+                        else:
+                            check_col = True
+                if not self.mazeBox.collidepoint(pygame.mouse.get_pos()):
+                    if not self.godMode:
+                        self.manager.go_to(GameOverScene())
+                    else:
+                        check_col = True
+                    print("outside game area")
+                if ((self.last_pos[0] - pygame.mouse.get_pos()[0]) ** 2 + (self.last_pos[1] - pygame.mouse.get_pos()[1]) ** 2 > self.levelDrawSize ** 2):
+                    coords1 = ((self.last_pos[0] + pygame.mouse.get_pos()[0] * 2) / 3, (self.last_pos[1] + pygame.mouse.get_pos()[1] * 2) / 3)
+                    coords2 = ((self.last_pos[0] + pygame.mouse.get_pos()[0]) / 2, (self.last_pos[1] + pygame.mouse.get_pos()[1]) / 2)
+                    coords3 = ((self.last_pos[0]*2 + pygame.mouse.get_pos()[0]) / 3, (self.last_pos[1]*2 + pygame.mouse.get_pos()[1]) / 3)
+                    print(self.last_pos)
+                    print(coords1)
+                    print(pygame.mouse.get_pos())
+                    for block in self.block_group:
+                        if block.rect.collidepoint(coords1) or block.rect.collidepoint(coords2) or block.rect.collidepoint(coords3):
+                            if not self.godMode:
+                                self.manager.go_to(GameOverScene())
+                            else:
+                                check_col = True
+                if not check_col:
+                    self.last_pos = pygame.mouse.get_pos()
+                else:
+                    pygame.mouse.set_pos(self.last_pos)
+                if self.exit.rect.collidepoint(pygame.mouse.get_pos()):
+                    self.manager.go_to(MazeScene(self.level+1, self.difficulty))
+
 
 
 class MoveMouseScene(Scene):
@@ -258,6 +260,8 @@ class TitleScene(Scene):
         self.difficultyText.append(SimpleSprite((420, 550), self.sfont.render('EXTREME MODE', True, WHITE)))
         self.menutext = pygame.sprite.Group(self.difficultyText)
         self.selected = 0
+        self.check = -1
+
 
 
     def render(self, screen):
@@ -298,7 +302,17 @@ class TitleScene(Scene):
             if event.type == KEYDOWN and event.key == K_DOWN:
                 self.selected += 1
                 self.selected %= 3
-
+            if event.type == MOUSEMOTION:
+                for i in range(3):
+                    if self.difficultyText[i].rect.collidepoint(pygame.mouse.get_pos()):
+                        self.selected = i
+            if event.type == MOUSEBUTTONDOWN:
+                for i in range(3):
+                    if self.difficultyText[i].rect.collidepoint(pygame.mouse.get_pos()):
+                        self.check = i
+            if event.type == MOUSEBUTTONUP:
+                if self.check >= 0 and self.difficultyText[self.check].rect.collidepoint(pygame.mouse.get_pos()):
+                    self.manager.go_to(MoveMouseScene(self.check))
 
 class TextScrollScene(Scene):
 
