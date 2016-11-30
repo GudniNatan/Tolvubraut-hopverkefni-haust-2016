@@ -44,6 +44,19 @@ class SimpleSprite(pygame.sprite.Sprite):
         self.rect = surface.get_rect()
         self.rect.topleft = top_left_point
 
+
+class SimpleRectSprite(pygame.sprite.Sprite):  # Molds sprite to rect, either by cropping or rescaling
+    def __init__(self, rect, surface, scale=False):
+        super(SimpleRectSprite, self).__init__()
+        self.rect = pygame.Rect(rect)
+        self.image = surface
+        rect.topleft = (0, 0)
+        if not scale:
+            self.image = surface.subsurface(rect)
+        else:
+            self.image = pygame.transform.scale(surface, (rect.w, rect.h))
+
+
 class Animation(object):
     def __init__(self, name, params=dict()):
         self.name = name
