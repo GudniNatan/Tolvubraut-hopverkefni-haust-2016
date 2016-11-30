@@ -39,6 +39,7 @@ class MazeScene(Scene):
         super(MazeScene, self).__init__()
         # Generate maze
         print("new level")
+        walls = pygame.image.load(os.path.join('images', 'veggur test 4.png')).convert_alpha()
         self.level = level
         mazeGenerator = Generator()
         self.grid = Grid(GRID_SIZE)
@@ -67,7 +68,6 @@ class MazeScene(Scene):
         self.wall_tile = pygame.image.load(os.path.join('images', 'steinn.png')).convert_alpha()
         self.wall_tile = pygame.transform.smoothscale(self.wall_tile, (self.levelDrawSize, self.levelDrawSize))
 
-
         if self.level % 2:
             self.exit = Block(pygame.Rect(mazeBox.left + levelDrawSize, mazeBox.top, levelDrawSize, levelDrawSize), GREEN)
             self.entrance = Block(pygame.Rect(mazeBox.right - levelDrawSize*2, mazeBox.bottom - levelDrawSize, levelDrawSize, levelDrawSize), BLUE)
@@ -78,13 +78,65 @@ class MazeScene(Scene):
             self.entrance = Block(pygame.Rect(mazeBox.left + levelDrawSize, mazeBox.top, levelDrawSize, levelDrawSize), BLUE)
             topcap = copy.deepcopy(self.entrance)
             bottomcap = copy.deepcopy(self.exit)
+        self.maze[1][0] = 1
+        self.maze[-2][-1] = 1
 
         for i in range(len(self.maze)):
             for j in range(len(self.maze[i])):
-                if self.maze[i][j] == 0:
+                """if self.maze[i][j] == 0:
                     if not (i == len(self.maze) - 2 and j == len(self.maze[i]) - 1):
                         if not (i == 1 and j == 0):
-                            self.block_group.add(Block(pygame.Rect(i * levelDrawSize + mazeBox.left, j * levelDrawSize + mazeBox.top, levelDrawSize, levelDrawSize), BLACK, self.wall_tile))
+                            self.block_group.add(Block(pygame.Rect(i * levelDrawSize + mazeBox.left, j * levelDrawSize + mazeBox.top, levelDrawSize, levelDrawSize), BLACK, self.wall_tile))"""
+                if self.maze[i][j] == 0:
+                    sliced = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+                    if 1 < i:
+                        sliced[0][1] = self.maze[i-1][j]
+                        if j > 1:
+                            sliced[0][0] = self.maze[i-1][j-1]
+                        if j < (len(self.maze[i]) - 1):
+                            sliced[0][2] = self.maze[i-1][j+1]
+                    if 1 < j:
+                        sliced[1][0] = self.maze[i][j-1]
+                    if j < (len(self.maze[i]) - 1):
+                        sliced[1][2] = self.maze[i][j+1]
+                    if i < (len(self.maze)-1):
+                        sliced[2][1] = self.maze[i+1][j]
+                        if 1 < j:
+                            sliced[2][0] = self.maze[i+1][j-1]
+                        if j < (len(self.maze[i]) - 1):
+                            sliced[2][2] = self.maze[i+1][j+1]
+
+                    rect = pygame.Rect(j * drawSize, i * drawSize, 24, 24)
+                    sprite = Block(rect, BLACK)
+                    rotated = list(sliced)
+                    for i2 in xrange(4):
+                        innerRect = pygame.Rect(0, 0, 12, 12)
+                        if rotated[1][0]:
+                            if rotated[0][1]:
+                                # open corner
+                                innerRect.topleft = (12, 12)
+                            else:
+                                # wall facing left
+                                innerRect.topleft = (24, 0)
+                        elif rotated[0][1]:
+                            innerRect.topleft = (12, 0)
+
+                            # wall facing up
+                        elif rotated[0][0]:
+                            innerRect.topleft = (0, 12)
+
+                            # closed corner
+                        sprite.image.blit(walls.subsurface(innerRect), (0, 0))
+
+                        rotated = zip(*rotated[::-1])
+                        sprite.image = pygame.transform.rotate(sprite.image, -90)
+                    rect = pygame.Rect(j * drawSize, i * drawSize, drawSize, drawSize)
+                    sprite.image = pygame.transform.rotate(sprite.image, -90)
+                    sprite.image = pygame.transform.flip(sprite.image, True, False)
+                    sprite = SimpleRectSprite(rect, sprite.image, True)
+                    sprite.rect.left = i * levelDrawSize + mazeBox.left
+                    sprite.rect.top = j * levelDrawSize + mazeBox.top
+                    self.block_group.add(sprite)
         self.stalker = None
         if level >= 5 and difficulty > 0:
             pygame.time.set_timer(stalkerEvent, 5000)  # Spawn stalker after 5 seconds
@@ -105,7 +157,6 @@ class MazeScene(Scene):
         if self.stalker:
             screen.blit(self.stalker.image, self.stalker.rect)
         pygame.draw.rect(screen, BLACK, self.mazeBox, 3)
-
 
     def update(self, time):
         check_col = False
