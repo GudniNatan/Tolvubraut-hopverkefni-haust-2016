@@ -12,13 +12,13 @@ def main():
     clock = pygame.time.Clock()
     pygame.display.set_caption('FOR3G3U')
 
-    #Setup
+    # Setup
     charset = pygame.image.load(os.path.join('images', 'charset.png')).convert_alpha()
     pygame.time.set_timer(pathfindingEvent, 500)
     pygame.time.set_timer(animationEvent, 1000 / 24)
     gridImage = pygame.image.load(os.path.join('images', 'grid 16x16 transculent.png')).convert_alpha()
     gridImage = pygame.transform.scale(gridImage, (gridImage.get_rect().w * 24 / 16, gridImage.get_rect().h * 24 / 16))
-    manager = SceneMananger()
+    manager = SceneManager()
     pygame.mixer.init()
 
     running = True
@@ -27,13 +27,10 @@ def main():
             running = False
             return
         manager.scene.handle_events(pygame.event.get())
-
-
-        manager.scene.update(clock.get_time())
+        manager.scene.update(clock)
         manager.scene.render(screen)
         pygame.display.update()
         clock.tick()
-        print(clock.get_fps())
 
     pygame.quit()
     sys.exit()
