@@ -361,6 +361,7 @@ class GameOverScene(Scene):
         for event in events:
             if event.type == KEYDOWN and event.key == K_SPACE:
                 self.manager.go_to(TitleScene())
+<<<<<<< HEAD
             self.txtbx.update(events)
 
 class ScoreScene(Scene):
@@ -429,3 +430,5 @@ class ScoreScene(Scene):
                 self.selected %= 3
 
 
+=======
+>>>>>>> origin/njalsson
