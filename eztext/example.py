@@ -1,6 +1,7 @@
 # EzText example
 from pygame.locals import *
-import pygame, sys, eztext
+import pygame, sys
+from eztext import *
 
 def main():
     # initialize pygame
@@ -12,7 +13,7 @@ def main():
     # here is the magic: making the text input
     # create an input with a max length of 45,
     # and a red color and a prompt saying 'type here: '
-    txtbx = eztext.Input(maxlength=45, color=(255,0,0), prompt='type here: ')
+    txtbx = Input(maxlength=45, color=(255,0,0), prompt='type here: ')
     # create the pygame clock
     clock = pygame.time.Clock()
     # main loop!
@@ -28,6 +29,7 @@ def main():
             # close it x button si pressed
             if event.type == QUIT: return
 
+        print(txtbx)
         # clear the screen
         screen.fill((255,255,255))
         # update txtbx
@@ -38,3 +40,5 @@ def main():
         pygame.display.flip()
 
 if __name__ == '__main__': main()
+
+print txtbx

@@ -1,16 +1,15 @@
 import pygame
-from pygame.locals import *
 import os
+import random
+import codecs
+import copy
+import MySQLdb
+from pygame.locals import *
+from eztext import *
+from generateMaze import Generator
 from Constants import *
 from Characters_sprites import *
 from Objects import *
-import random
-import codecs
-from generateMaze import Generator
-import copy
-from eztext import *
-import inputbox
-
 
 
 class SceneManager(object):
@@ -208,15 +207,41 @@ class TitleScene(Scene):
         self.color = [50, 50, 50]
         self.colorLevel = [True, True, True]
         self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
+        self.text1 = self.sfont.render('Hall of fame ', True, WHITE)
         self.text2 = self.sfont.render('Choose your difficulty: ', True, WHITE)
+
         #self.txtbx = eztext.Input(maxlength=45, color=(255,0,0), prompt='type here: ')
         self.difficultyText = list()
-        self.difficultyText.append(SimpleSprite((420, 450), self.sfont.render('babby Mode', True, WHITE)))
-        self.difficultyText.append(SimpleSprite((420, 500), self.sfont.render('normal Mode', True, WHITE)))
-        self.difficultyText.append(SimpleSprite((420, 550), self.sfont.render('spergstreme', True, WHITE)))
+        self.topten = list()
+        self.difficultyText.append(SimpleSprite((700, 300), self.sfont.render('Easy Mode', True, WHITE)))
+        self.difficultyText.append(SimpleSprite((700, 400), self.sfont.render('Hard Mode', True, WHITE)))
+        self.difficultyText.append(SimpleSprite((700, 500), self.sfont.render('Extreme Mode', True, WHITE)))
         self.menutext = pygame.sprite.Group(self.difficultyText)
         self.selected = 0
 
+        #connect to db and get the top 10
+        self.db = MySQLdb.connect("tsuts.tskoli.is", "0403983099","mypassword" , "0403983099_highscores")
+        if self.db:
+            print "connected"
+        cursor = self.db.cursor()
+
+        sql = "SELECT name, score FROM data ORDER BY score ASC"
+
+        try:
+            
+           # Execute the SQL command
+           cursor.execute(sql)
+           # Fetch all the rows in a list of lists.
+           results = cursor.fetchall()
+           for row in results:
+              name = row[0]
+              score = row[1]
+              # Now print fetched result
+              print name,"  -  " ,score
+              self.topten.append(SimpleSprite((200, 300), self.sfont.render('name and score', True, WHITE)))
+
+        except Exception as e:
+            raise
 
     def render(self, screen):
         self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
@@ -224,8 +249,10 @@ class TitleScene(Scene):
 
         screen.fill(BLACK)
         screen.blit(self.titletext, (450, 50))
-        screen.blit(self.text2, (420, 350))
+        screen.blit(self.text1, (250, 200))
+        screen.blit(self.text2, (620, 200))
         self.menutext.draw(screen)
+        #pygame.draw.rect(screen, WHITE, self.topten.rect, 1)
         pygame.draw.rect(screen, WHITE, self.difficultyText[self.selected].rect, 3)
 
 
@@ -304,6 +331,7 @@ class GameOverScene(Scene):
         self.mixer.set_volume(0.8)
         self.music = pygame.mixer.Sound(os.path.join('sounds', 'triggered.ogg'))
         self.mixer.play(self.music)
+        self.txtbx = Input(maxlength=45, color=(255,0,0), prompt='type here: ')
 
         font = pygame.font.SysFont('Consolas', 56)
         small_font = pygame.font.SysFont('Consolas', 32)
@@ -312,15 +340,19 @@ class GameOverScene(Scene):
         self.text3 = small_font.render('want to submit to leaderboards?', True, WHITE)
         #text_width, text_height = small_font.size("self.text3")
         #screen = pygame.display.set_mode((100, 100))
-        self.inp = ask("what is your name?") #inp will equal whatever the input is
+        #self.inp = ask("what is your name?") #inp will equal whatever the input is
 
 
     def render(self, screen):
         screen.fill(BLACK)
+
         screen.blit(self.text, (500, 50))
         screen.blit(self.text2, (440, 120))
         screen.blit(self.text3, (440, 200))
-        screen.blit(self.inp, (440, 300))
+        #screen.blit(self.inp, (440, 300))
+        self.txtbx.draw(screen)
+
+        pygame.display.flip()
 
     def update(self, time):
         pass
@@ -329,4 +361,71 @@ class GameOverScene(Scene):
         for event in events:
             if event.type == KEYDOWN and event.key == K_SPACE:
                 self.manager.go_to(TitleScene())
+            self.txtbx.update(events)
+
+class ScoreScene(Scene):
+
+    def __init__(self):
+        super(TitleScene, self).__init__()
+        self.font = pygame.font.SysFont('Consolas', 56)
+        self.sfont = pygame.font.SysFont('Consolas', 32)
+        self.mixer = pygame.mixer.Channel(0)
+        self.mixer.set_volume(0.3)
+        self.music = pygame.mixer.Sound(os.path.join('sounds', 'abba lite.ogg'))
+        self.mixer.play(self.music)
+        print("music")
+        self.color = [50, 50, 50]
+        self.colorLevel = [True, True, True]
+        self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
+        self.text2 = self.sfont.render('Choose your difficulty: ', True, WHITE)
+        #self.txtbx = eztext.Input(maxlength=45, color=(255,0,0), prompt='type here: ')
+        self.difficultyText = list()
+        self.difficultyText.append(SimpleSprite((420, 450), self.sfont.render('babby Mode', True, WHITE)))
+        self.difficultyText.append(SimpleSprite((420, 450), self.sfont.render('babby Mode', True, WHITE)))
+        self.difficultyText.append(SimpleSprite((420, 500), self.sfont.render('normal Mode', True, WHITE)))
+        self.difficultyText.append(SimpleSprite((420, 550), self.sfont.render('spergstreme', True, WHITE)))
+        self.menutext = pygame.sprite.Group(self.difficultyText)
+        self.selected = 0
+
+
+    def render(self, screen):
+        self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
+        #screen.blit(self.txtbx, (450, 200))
+
+        screen.fill(BLACK)
+        screen.blit(self.titletext, (450, 50))
+        screen.blit(self.text2, (420, 350))
+        self.menutext.draw(screen)
+        pygame.draw.rect(screen, WHITE, self.difficultyText[self.selected].rect, 3)
+
+
+    def update(self, time):
+        pass
+
+    def handle_events(self, events):
+        for event in events:
+            if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_RETURN):
+                self.mixer.fadeout(500)
+                self.manager.go_to(MoveMouseScene(self.selected))
+            if event.type == KEYDOWN and event.key == K_ESCAPE:
+                pygame.event.post(pygame.event.Event(QUIT))
+            if event.type == animationEvent:
+                for i in range(3):
+                    if self.colorLevel[i]:
+                        self.color[i] += i+random.randint(-i, 2)
+                        if self.color[i] >= 256:
+                            self.color[i] = 255
+                            self.colorLevel[i] = False
+                    else:
+                        self.color[i] -= i+random.randint(-i, 2)
+                        if self.color[i] <= 0:
+                            self.color[i] = 0
+                            self.colorLevel[i] = True
+            if event.type == KEYDOWN and event.key == K_UP:
+                self.selected -= 1
+                self.selected %= 3
+            if event.type == KEYDOWN and event.key == K_DOWN:
+                self.selected += 1
+                self.selected %= 3
+
 
