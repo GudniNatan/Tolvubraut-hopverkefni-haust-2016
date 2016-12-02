@@ -191,7 +191,8 @@ class MazeScene(Scene):
             if event.type == stalkerEvent and not self.stalker:
                 pygame.time.set_timer(stalkerEvent, 0)  # Stops timer after running once
                 stalkerRect = pygame.Rect(self.entrance.rect)
-                stalkerRect.center = self.entrance.rect.center
+                stalkerRect.h -= 1
+                stalkerRect.w -= 1
                 self.stalker = Stalker(stalkerRect, 0, 0)
                 self.stalker.baseSpeed += (-0.05) + self.level * 0.01
                 pygame.event.post(pygame.event.Event(pathfindingEvent))
