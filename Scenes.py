@@ -145,8 +145,6 @@ class MazeScene(Scene):
                     sprite.rect.top = j * levelDrawSize + mazeBox.top
                     self.block_group.add(sprite)
 
-
-
         self.stalker = None
         if level >= 5 and difficulty > 0:
             pygame.time.set_timer(stalkerEvent, 5000)  # Spawn stalker after 5 seconds
@@ -203,6 +201,11 @@ class MazeScene(Scene):
                 stalker_grid_pos = [self.stalker.collision_rect.x / self.levelDrawSize, self.stalker.collision_rect.y / self.levelDrawSize]
                 self.stalker.update_path(self.grid.grid, stalker_grid_pos, mouse_grid_pos)
             if event.type == MOUSEMOTION:
+                distance = (-(self.last_pos[0] - pygame.mouse.get_pos()[0]), -(self.last_pos[1] - pygame.mouse.get_pos()[1]))
+                dist2 = ((distance[0] * distance[0]) + (distance[1] * distance[1]))
+                if dist2 > self.levelDrawSize ** 2 * 4 and (self.last_pos[1] - pygame.mouse.get_pos()[1]):
+                    factor = (dist2 - (self.levelDrawSize ** 2 * 4)) ** (1/2.0) / 2
+                    pygame.mouse.set_pos(self.last_pos[0] + (distance[0] / factor), self.last_pos[1] + (distance[1] / factor))
                 check_col = False
                 for block in self.block_group:
                     if block.rect.collidepoint(pygame.mouse.get_pos()):
@@ -215,8 +218,7 @@ class MazeScene(Scene):
                         self.manager.go_to(GameOverScene())
                     else:
                         check_col = True
-                    print("outside game area")
-                if (self.last_pos[0] - pygame.mouse.get_pos()[0]) ** 2 + (self.last_pos[1] - pygame.mouse.get_pos()[1]) ** 2 > self.levelDrawSize ** 2:
+                if distance[0] ** 2 + distance[1] ** 2 > self.levelDrawSize ** 2:
                     coords1 = ((self.last_pos[0] + pygame.mouse.get_pos()[0] * 2) / 3, (self.last_pos[1] + pygame.mouse.get_pos()[1] * 2) / 3)
                     coords2 = ((self.last_pos[0] + pygame.mouse.get_pos()[0]) / 2, (self.last_pos[1] + pygame.mouse.get_pos()[1]) / 2)
                     coords3 = ((self.last_pos[0]*2 + pygame.mouse.get_pos()[0]) / 3, (self.last_pos[1]*2 + pygame.mouse.get_pos()[1]) / 3)
@@ -290,8 +292,6 @@ class TitleScene(Scene):
         self.menutext = pygame.sprite.Group(self.difficultyText)
         self.selected = 0
         self.check = -1
-
-
 
     def render(self, screen):
         self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
