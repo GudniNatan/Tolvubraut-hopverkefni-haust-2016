@@ -1,0 +1,6 @@
+30.11.2016
+Ég bjó til vegg-textures sem breytast dýnamískt eftir því hvort það séu aðrir veggir við hliðina, hvort veggurinn sé alveg lokaður af o.s.frv
+Þetta tók talsverða leit um hvernig best væri að gera þetta, en að lokum fann ég mína eigin leið.
+Allur kóðinn er minn eiginn, eins og vanalega.
+Næst á dagskrá er texture á köttinn, og svo þarf ég að ákveða hvort ég vilji breyta aftur collision detection á músinni þannig að það sé engin leið
+til þess að svindla.
