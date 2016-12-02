@@ -43,6 +43,10 @@ class MazeScene(Scene):
         self.level = level
         mazeGenerator = Generator()
         self.grid = Grid(GRID_SIZE)
+        self.mazefloor_count_Y = 0
+        self.mazefloor_count_X = 0
+        self.mazefloor_arr =  []
+
         if level > 14:
             level = 14
         self.maze = mazeGenerator.generate(0, 0, 2 + level, 2 + level)
@@ -67,6 +71,8 @@ class MazeScene(Scene):
         self.floor_tile = pygame.transform.smoothscale(self.floor_tile, (self.levelDrawSize, self.levelDrawSize))
         self.wall_tile = pygame.image.load(os.path.join('images', 'steinn.png')).convert_alpha()
         self.wall_tile = pygame.transform.smoothscale(self.wall_tile, (self.levelDrawSize, self.levelDrawSize))
+        self.tele1_tile = pygame.image.load(os.path.join('images', 'tele1.png')).convert_alpha()
+        self.tele2_tile = pygame.image.load(os.path.join('images', 'tele2.png')).convert_alpha()
 
         if self.level % 2:
             self.exit = Block(pygame.Rect(mazeBox.left + levelDrawSize, mazeBox.top, levelDrawSize, levelDrawSize), GREEN)
@@ -87,6 +93,7 @@ class MazeScene(Scene):
                     if not (i == len(self.maze) - 2 and j == len(self.maze[i]) - 1):
                         if not (i == 1 and j == 0):
                             self.block_group.add(Block(pygame.Rect(i * levelDrawSize + mazeBox.left, j * levelDrawSize + mazeBox.top, levelDrawSize, levelDrawSize), BLACK, self.wall_tile))"""
+
                 if self.maze[i][j] == 0:
                     sliced = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
                     if 1 < i:
@@ -145,6 +152,13 @@ class MazeScene(Scene):
         bottomcap.rect.y += levelDrawSize
         self.grid.update_grid(pygame.sprite.Group(self.block_group, topcap, bottomcap), self.levelDrawSize)
         self.last_pos = self.entrance.rect.center
+        if level >= 5:
+            rect1 = pygame.Rect(random.randrange(1, len(self.maze) / 2, 2)*levelDrawSize + mazeBox.left, random.randrange(1, len(self.maze[0]), 2)*levelDrawSize + mazeBox.top, drawSize, drawSize)
+            rect2 = pygame.Rect(random.randrange((len(self.maze) / 2) if (len(self.maze) / 2) % 2 else (len(self.maze) / 2) + 1, len(self.maze)-1, 2)*levelDrawSize + mazeBox.left, random.randrange(1, len(self.maze[0]), 2)*levelDrawSize + mazeBox.top, drawSize, drawSize)
+            self.tele1 = TeleBlock(rect1, BLACK, self.tele1_tile)
+            self.tele2 = TeleBlock(rect2, BLACK, self.tele2_tile)
+
+
 
     def render(self, screen):
         screen.fill(WHITE)
@@ -152,9 +166,13 @@ class MazeScene(Scene):
             for j in xrange(self.mazeBox.h / self.levelDrawSize):
                 screen.blit(self.floor_tile, (i * self.levelDrawSize + self.mazeBox.left, j * self.levelDrawSize + self.mazeBox.top))
 
+
         self.block_group.draw(screen)
         screen.blit(self.exit.image, self.exit.rect)
         screen.blit(self.entrance.image, self.entrance.rect)
+        if self.level >= 5:
+            screen.blit(self.tele1.image, self.tele1.rect)
+            screen.blit(self.tele2.image, self.tele2.rect)
         if self.stalker:
             screen.blit(self.stalker.image, self.stalker.rect)
         pygame.draw.rect(screen, BLACK, self.mazeBox, 3)
@@ -200,7 +218,7 @@ class MazeScene(Scene):
                         self.manager.go_to(GameOverScene())
                     else:
                         check_col = True
-                if distance[0] + distance[1] > self.levelDrawSize ** 2:
+                if distance[0] ** 2 + distance[1] ** 2 > self.levelDrawSize ** 2:
                     coords1 = ((self.last_pos[0] + pygame.mouse.get_pos()[0] * 2) / 3, (self.last_pos[1] + pygame.mouse.get_pos()[1] * 2) / 3)
                     coords2 = ((self.last_pos[0] + pygame.mouse.get_pos()[0]) / 2, (self.last_pos[1] + pygame.mouse.get_pos()[1]) / 2)
                     coords3 = ((self.last_pos[0]*2 + pygame.mouse.get_pos()[0]) / 3, (self.last_pos[1]*2 + pygame.mouse.get_pos()[1]) / 3)
@@ -216,6 +234,17 @@ class MazeScene(Scene):
                     pygame.mouse.set_pos(self.last_pos)
                 if self.exit.rect.collidepoint(self.last_pos):
                     self.manager.go_to(MazeScene(self.level+1, self.difficulty))
+
+
+
+            if event.type == MOUSEBUTTONDOWN and event.button == 1:
+                if self.level >= 5 and self.tele1.rect.collidepoint(self.last_pos):
+                    pygame.mouse.set_pos(self.tele2.rect.center)
+                    self.last_pos = self.tele2.rect.center
+
+                elif self.level >= 5 and self.tele2.rect.collidepoint(self.last_pos):
+                    pygame.mouse.set_pos(self.tele1.rect.center)
+                    self.last_pos = self.tele1.rect.center
 
 
 
@@ -306,11 +335,11 @@ class TitleScene(Scene):
                 for i in range(3):
                     if self.difficultyText[i].rect.collidepoint(pygame.mouse.get_pos()):
                         self.selected = i
-            if event.type == MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[0]:
+            if event.type == MOUSEBUTTONDOWN and event.button == 1:
                 for i in range(3):
                     if self.difficultyText[i].rect.collidepoint(pygame.mouse.get_pos()):
                         self.check = i
-            if event.type == MOUSEBUTTONUP:
+            if event.type == MOUSEBUTTONUP and event.button == 1:
                 if self.check >= 0 and self.difficultyText[self.check].rect.collidepoint(pygame.mouse.get_pos()) and not pygame.mouse.get_pressed()[0]:
                     self.mixer.fadeout(500)
                     self.manager.go_to(MoveMouseScene(self.check))
