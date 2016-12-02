@@ -158,7 +158,9 @@ class MazeScene(Scene):
             self.tele1 = TeleBlock(rect1, BLACK, self.tele1_tile)
             self.tele2 = TeleBlock(rect2, BLACK, self.tele2_tile)
 
-
+        else:
+            self.tele1 = 0
+            self.tele2 = 0
 
     def render(self, screen):
         screen.fill(WHITE)
@@ -170,7 +172,7 @@ class MazeScene(Scene):
         self.block_group.draw(screen)
         screen.blit(self.exit.image, self.exit.rect)
         screen.blit(self.entrance.image, self.entrance.rect)
-        if self.level >= 5:
+        if self.tele1 and self.tele2:
             screen.blit(self.tele1.image, self.tele1.rect)
             screen.blit(self.tele2.image, self.tele2.rect)
         if self.stalker:
@@ -238,13 +240,17 @@ class MazeScene(Scene):
 
 
             if event.type == MOUSEBUTTONDOWN and event.button == 1:
-                if self.level >= 5 and self.tele1.rect.collidepoint(self.last_pos):
+                if self.tele1 and self.tele2 and self.tele1.rect.collidepoint(self.last_pos):
                     pygame.mouse.set_pos(self.tele2.rect.center)
                     self.last_pos = self.tele2.rect.center
+                    self.tele1 = 0
+                    self.tele2 = 0
 
-                elif self.level >= 5 and self.tele2.rect.collidepoint(self.last_pos):
+                elif self.tele1 and self.tele2 and self.tele2.rect.collidepoint(self.last_pos):
                     pygame.mouse.set_pos(self.tele1.rect.center)
                     self.last_pos = self.tele1.rect.center
+                    self.tele1 = 0
+                    self.tele2 = 0
 
 
 
