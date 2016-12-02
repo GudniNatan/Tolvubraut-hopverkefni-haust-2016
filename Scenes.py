@@ -39,7 +39,6 @@ class MazeScene(Scene):
         super(MazeScene, self).__init__()
         # Generate maze
         print("new level")
-        walls = pygame.image.load(os.path.join('images', 'veggur test 4.png')).convert_alpha()
         self.level = level
         mazeGenerator = Generator()
         self.grid = Grid(GRID_SIZE)
@@ -63,10 +62,15 @@ class MazeScene(Scene):
         elif difficulty == 2:
             self.godMode = False
         self.difficulty = difficulty
+        self.spot = 0
         self.floor_tile = pygame.image.load(os.path.join('images', 'floor.png')).convert_alpha()
         self.floor_tile = pygame.transform.smoothscale(self.floor_tile, (self.levelDrawSize, self.levelDrawSize))
         self.wall_tile = pygame.image.load(os.path.join('images', 'steinn.png')).convert_alpha()
         self.wall_tile = pygame.transform.smoothscale(self.wall_tile, (self.levelDrawSize, self.levelDrawSize))
+        self.tele1_tile = pygame.image.load(os.path.join('images', 'tele1.png')).convert_alpha()
+        self.tele1_tile = pygame.transform.smoothscale(self.tele1_tile, (self.levelDrawSize, self.levelDrawSize))
+        self.tele2_tile = pygame.image.load(os.path.join('images', 'tele2.png')).convert_alpha()
+        self.tele2_tile = pygame.transform.smoothscale(self.tele2_tile, (self.levelDrawSize, self.levelDrawSize))
 
         if self.level % 2:
             self.exit = Block(pygame.Rect(mazeBox.left + levelDrawSize, mazeBox.top, levelDrawSize, levelDrawSize), GREEN)
@@ -78,65 +82,13 @@ class MazeScene(Scene):
             self.entrance = Block(pygame.Rect(mazeBox.left + levelDrawSize, mazeBox.top, levelDrawSize, levelDrawSize), BLUE)
             topcap = copy.deepcopy(self.entrance)
             bottomcap = copy.deepcopy(self.exit)
-        self.maze[1][0] = 1
-        self.maze[-2][-1] = 1
 
         for i in range(len(self.maze)):
             for j in range(len(self.maze[i])):
-                """if self.maze[i][j] == 0:
+                if self.maze[i][j] == 0:
                     if not (i == len(self.maze) - 2 and j == len(self.maze[i]) - 1):
                         if not (i == 1 and j == 0):
-                            self.block_group.add(Block(pygame.Rect(i * levelDrawSize + mazeBox.left, j * levelDrawSize + mazeBox.top, levelDrawSize, levelDrawSize), BLACK, self.wall_tile))"""
-                if self.maze[i][j] == 0:
-                    sliced = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
-                    if 1 < i:
-                        sliced[0][1] = self.maze[i-1][j]
-                        if j > 1:
-                            sliced[0][0] = self.maze[i-1][j-1]
-                        if j < (len(self.maze[i]) - 1):
-                            sliced[0][2] = self.maze[i-1][j+1]
-                    if 1 < j:
-                        sliced[1][0] = self.maze[i][j-1]
-                    if j < (len(self.maze[i]) - 1):
-                        sliced[1][2] = self.maze[i][j+1]
-                    if i < (len(self.maze)-1):
-                        sliced[2][1] = self.maze[i+1][j]
-                        if 1 < j:
-                            sliced[2][0] = self.maze[i+1][j-1]
-                        if j < (len(self.maze[i]) - 1):
-                            sliced[2][2] = self.maze[i+1][j+1]
-
-                    rect = pygame.Rect(j * drawSize, i * drawSize, 24, 24)
-                    sprite = Block(rect, BLACK)
-                    rotated = list(sliced)
-                    for i2 in xrange(4):
-                        innerRect = pygame.Rect(0, 0, 12, 12)
-                        if rotated[1][0]:
-                            if rotated[0][1]:
-                                # open corner
-                                innerRect.topleft = (12, 12)
-                            else:
-                                # wall facing left
-                                innerRect.topleft = (24, 0)
-                        elif rotated[0][1]:
-                            innerRect.topleft = (12, 0)
-
-                            # wall facing up
-                        elif rotated[0][0]:
-                            innerRect.topleft = (0, 12)
-
-                            # closed corner
-                        sprite.image.blit(walls.subsurface(innerRect), (0, 0))
-
-                        rotated = zip(*rotated[::-1])
-                        sprite.image = pygame.transform.rotate(sprite.image, -90)
-                    rect = pygame.Rect(j * drawSize, i * drawSize, drawSize, drawSize)
-                    sprite.image = pygame.transform.rotate(sprite.image, -90)
-                    sprite.image = pygame.transform.flip(sprite.image, True, False)
-                    sprite = SimpleRectSprite(rect, sprite.image, True)
-                    sprite.rect.left = i * levelDrawSize + mazeBox.left
-                    sprite.rect.top = j * levelDrawSize + mazeBox.top
-                    self.block_group.add(sprite)
+                            self.block_group.add(Block(pygame.Rect(i * levelDrawSize + mazeBox.left, j * levelDrawSize + mazeBox.top, levelDrawSize, levelDrawSize), BLACK, self.wall_tile))
         self.stalker = None
         if level >= 5 and difficulty > 0:
             pygame.time.set_timer(stalkerEvent, 5000)  # Spawn stalker after 5 seconds
@@ -148,7 +100,9 @@ class MazeScene(Scene):
     def render(self, screen):
         screen.fill(WHITE)
         for i in xrange(self.mazeBox.w / self.levelDrawSize):
+            self.spot = self.spot + 1
             for j in xrange(self.mazeBox.h / self.levelDrawSize):
+
                 screen.blit(self.floor_tile, (i * self.levelDrawSize + self.mazeBox.left, j * self.levelDrawSize + self.mazeBox.top))
 
         self.block_group.draw(screen)
@@ -158,7 +112,41 @@ class MazeScene(Scene):
             screen.blit(self.stalker.image, self.stalker.rect)
         pygame.draw.rect(screen, BLACK, self.mazeBox, 3)
 
+
+
     def update(self, time):
+        check_col = False
+        for block in self.block_group:
+            if block.rect.collidepoint(pygame.mouse.get_pos()):
+                if not self.godMode:
+                    self.manager.go_to(GameOverScene())
+                else:
+                    check_col = True
+        if not self.mazeBox.collidepoint(pygame.mouse.get_pos()):
+            if not self.godMode:
+                self.manager.go_to(GameOverScene())
+            else:
+                check_col = True
+            print("outside game area")
+        if ((self.last_pos[0] - pygame.mouse.get_pos()[0]) ** 2 + (self.last_pos[1] - pygame.mouse.get_pos()[1]) ** 2 > self.levelDrawSize ** 2):
+            coords1 = ((self.last_pos[0] + pygame.mouse.get_pos()[0] * 2) / 3, (self.last_pos[1] + pygame.mouse.get_pos()[1] * 2) / 3)
+            coords2 = ((self.last_pos[0] + pygame.mouse.get_pos()[0]) / 2, (self.last_pos[1] + pygame.mouse.get_pos()[1]) / 2)
+            coords3 = ((self.last_pos[0]*2 + pygame.mouse.get_pos()[0]) / 3, (self.last_pos[1]*2 + pygame.mouse.get_pos()[1]) / 3)
+            print(self.last_pos)
+            print(coords1)
+            print(pygame.mouse.get_pos())
+            for block in self.block_group:
+                if block.rect.collidepoint(coords1) or block.rect.collidepoint(coords2) or block.rect.collidepoint(coords3):
+                    if not self.godMode:
+                        self.manager.go_to(GameOverScene())
+                    else:
+                        check_col = True
+        if not check_col:
+            self.last_pos = pygame.mouse.get_pos()
+        else:
+            pygame.mouse.set_pos(self.last_pos)
+        if self.exit.rect.collidepoint(pygame.mouse.get_pos()):
+            self.manager.go_to(MazeScene(self.level+1, self.difficulty))
         if self.stalker is not None:
             self.stalker.update_speed()
             self.stalker.update_position(time.get_time(), self.block_group)
@@ -181,40 +169,6 @@ class MazeScene(Scene):
                 mouse_grid_pos = [pygame.mouse.get_pos()[0] / self.levelDrawSize, pygame.mouse.get_pos()[1] / self.levelDrawSize]
                 stalker_grid_pos = [self.stalker.collision_rect.x / self.levelDrawSize, self.stalker.collision_rect.y / self.levelDrawSize]
                 self.stalker.update_path(self.grid.grid, stalker_grid_pos, mouse_grid_pos)
-            if event.type == MOUSEMOTION:
-                check_col = False
-                for block in self.block_group:
-                    if block.rect.collidepoint(pygame.mouse.get_pos()):
-                        if not self.godMode:
-                            self.manager.go_to(GameOverScene())
-                        else:
-                            check_col = True
-                if not self.mazeBox.collidepoint(pygame.mouse.get_pos()):
-                    if not self.godMode:
-                        self.manager.go_to(GameOverScene())
-                    else:
-                        check_col = True
-                    print("outside game area")
-                if ((self.last_pos[0] - pygame.mouse.get_pos()[0]) ** 2 + (self.last_pos[1] - pygame.mouse.get_pos()[1]) ** 2 > self.levelDrawSize ** 2):
-                    coords1 = ((self.last_pos[0] + pygame.mouse.get_pos()[0] * 2) / 3, (self.last_pos[1] + pygame.mouse.get_pos()[1] * 2) / 3)
-                    coords2 = ((self.last_pos[0] + pygame.mouse.get_pos()[0]) / 2, (self.last_pos[1] + pygame.mouse.get_pos()[1]) / 2)
-                    coords3 = ((self.last_pos[0]*2 + pygame.mouse.get_pos()[0]) / 3, (self.last_pos[1]*2 + pygame.mouse.get_pos()[1]) / 3)
-                    print(self.last_pos)
-                    print(coords1)
-                    print(pygame.mouse.get_pos())
-                    for block in self.block_group:
-                        if block.rect.collidepoint(coords1) or block.rect.collidepoint(coords2) or block.rect.collidepoint(coords3):
-                            if not self.godMode:
-                                self.manager.go_to(GameOverScene())
-                            else:
-                                check_col = True
-                if not check_col:
-                    self.last_pos = pygame.mouse.get_pos()
-                else:
-                    pygame.mouse.set_pos(self.last_pos)
-                if self.exit.rect.collidepoint(pygame.mouse.get_pos()):
-                    self.manager.go_to(MazeScene(self.level+1, self.difficulty))
-
 
 
 class MoveMouseScene(Scene):
@@ -260,8 +214,6 @@ class TitleScene(Scene):
         self.difficultyText.append(SimpleSprite((420, 550), self.sfont.render('EXTREME MODE', True, WHITE)))
         self.menutext = pygame.sprite.Group(self.difficultyText)
         self.selected = 0
-        self.check = -1
-
 
 
     def render(self, screen):
@@ -302,17 +254,7 @@ class TitleScene(Scene):
             if event.type == KEYDOWN and event.key == K_DOWN:
                 self.selected += 1
                 self.selected %= 3
-            if event.type == MOUSEMOTION:
-                for i in range(3):
-                    if self.difficultyText[i].rect.collidepoint(pygame.mouse.get_pos()):
-                        self.selected = i
-            if event.type == MOUSEBUTTONDOWN:
-                for i in range(3):
-                    if self.difficultyText[i].rect.collidepoint(pygame.mouse.get_pos()):
-                        self.check = i
-            if event.type == MOUSEBUTTONUP:
-                if self.check >= 0 and self.difficultyText[self.check].rect.collidepoint(pygame.mouse.get_pos()):
-                    self.manager.go_to(MoveMouseScene(self.check))
+
 
 class TextScrollScene(Scene):
 
