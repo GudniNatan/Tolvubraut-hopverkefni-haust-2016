@@ -407,6 +407,11 @@ class TitleScene(Scene):
 
 class GameOverScene(Scene):
     def __init__(self, level):
+                
+        self.mixer = pygame.mixer.Channel(0)
+        self.mixer.set_volume(0.5)
+        self.music = pygame.mixer.Sound(os.path.join('sounds', 'gameover.ogg'))
+        self.mixer.play(self.music)
         self.level = level
         font = pygame.font.SysFont('Consolas', 56)
         small_font = pygame.font.SysFont('Consolas', 32)
