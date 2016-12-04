@@ -85,11 +85,6 @@ class MazeScene(Scene):
 
         for i in range(len(self.maze)):
             for j in range(len(self.maze[i])):
-                """if self.maze[i][j] == 0:
-                    if not (i == len(self.maze) - 2 and j == len(self.maze[i]) - 1):
-                        if not (i == 1 and j == 0):
-                            self.block_group.add(Block(pygame.Rect(i * levelDrawSize + mazeBox.left, j * levelDrawSize + mazeBox.top, levelDrawSize, levelDrawSize), BLACK, self.wall_tile))"""
-
                 if self.maze[i][j] == 0:
                     sliced = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
                     if 1 < i:
@@ -108,7 +103,6 @@ class MazeScene(Scene):
                             sliced[2][0] = self.maze[i+1][j-1]
                         if j < (len(self.maze[i]) - 1):
                             sliced[2][2] = self.maze[i+1][j+1]
-
                     rect = pygame.Rect(j * drawSize, i * drawSize, 24, 24)
                     sprite = Block(rect, BLACK)
                     rotated = list(sliced)
@@ -123,14 +117,11 @@ class MazeScene(Scene):
                                 innerRect.topleft = (24, 0)
                         elif rotated[0][1]:
                             innerRect.topleft = (12, 0)
-
                             # wall facing up
                         elif rotated[0][0]:
                             innerRect.topleft = (0, 12)
-
                             # closed corner
                         sprite.image.blit(walls.subsurface(innerRect), (0, 0))
-
                         rotated = zip(*rotated[::-1])
                         sprite.image = pygame.transform.rotate(sprite.image, -90)
                     rect = pygame.Rect(j * drawSize, i * drawSize, drawSize, drawSize)
@@ -170,6 +161,9 @@ class MazeScene(Scene):
             screen.blit(self.tele2.image, self.tele2.rect)
         if self.stalker:
             screen.blit(self.stalker.image, self.stalker.rect)
+            """if self.stalker.next_square != 0:
+                screen.blit(self.stalker.image, self.stalker.next_square)
+                pass"""
         pygame.draw.rect(screen, BLACK, self.mazeBox, 3)
 
     def update(self, time):
@@ -186,15 +180,13 @@ class MazeScene(Scene):
             if event.type == stalkerEvent and not self.stalker:
                 pygame.time.set_timer(stalkerEvent, 0)  # Stops timer after running once
                 stalkerRect = pygame.Rect(self.entrance.rect)
-                stalkerRect.h -= 1
-                stalkerRect.w -= 1
                 self.stalker = Stalker(stalkerRect, 0, 0)
-                self.stalker.baseSpeed += 0.03
-                pygame.event.post(pygame.event.Event(pathfindingEvent))
+                self.stalker.baseSpeed += round((-0.05) + self.level * 0.01, 2)
+                #pygame.event.post(pygame.event.Event(pathfindingEvent))
                 pygame.time.set_timer(pathfindingEvent, 500)
             if event.type == pathfindingEvent and self.stalker:
                 mouse_grid_pos = [self.last_pos[0] / self.levelDrawSize, self.last_pos[1] / self.levelDrawSize]
-                stalker_grid_pos = [self.stalker.collision_rect.x / self.levelDrawSize, self.stalker.collision_rect.y / self.levelDrawSize]
+                stalker_grid_pos = [self.stalker.collision_rect.centerx / self.levelDrawSize, self.stalker.collision_rect.centery / self.levelDrawSize]
                 self.stalker.update_path(self.grid.grid, stalker_grid_pos, mouse_grid_pos, -1, 1000)
             if event.type == MOUSEMOTION:
                 distance = (-(self.last_pos[0] - pygame.mouse.get_pos()[0]), -(self.last_pos[1] - pygame.mouse.get_pos()[1]))
