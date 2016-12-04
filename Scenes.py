@@ -1,13 +1,15 @@
 import pygame
-from pygame.locals import *
 import os
+import random
+import codecs
+import copy
+import MySQLdb
+from pygame.locals import *
+from eztext import *
+from generateMaze import Generator
 from Constants import *
 from Characters_sprites import *
 from Objects import *
-import random
-import codecs
-from generateMaze import Generator
-import copy
 
 
 class SceneManager(object):
@@ -41,6 +43,7 @@ class MazeScene(Scene):
         print("new level")
         walls = pygame.image.load(os.path.join('images', 'veggur.png')).convert_alpha()
         self.level = level
+        print(self.level)
         mazeGenerator = Generator()
         self.grid = Grid(GRID_SIZE)
         if level > 14:
@@ -172,7 +175,7 @@ class MazeScene(Scene):
             self.stalker.update_speed()
             self.stalker.update_position(time.get_time(), self.block_group)
             if self.stalker.rect.collidepoint(self.last_pos):
-                self.manager.go_to(GameOverScene())
+                self.manager.go_to(GameOverScene(self.level))
 
     def handle_events(self, events):
         for event in events:
@@ -199,12 +202,12 @@ class MazeScene(Scene):
                 for block in self.block_group:
                     if block.rect.collidepoint(pygame.mouse.get_pos()):
                         if not self.godMode:
-                            self.manager.go_to(GameOverScene())
+                            self.manager.go_to(GameOverScene(self.level))
                         else:
                             check_col = True
                 if not self.mazeBox.collidepoint(pygame.mouse.get_pos()):
                     if not self.godMode:
-                        self.manager.go_to(GameOverScene())
+                        self.manager.go_to(GameOverScene(self.level))
                     else:
                         check_col = True
                 if distance[0] ** 2 + distance[1] ** 2 > self.levelDrawSize ** 2:
@@ -214,7 +217,7 @@ class MazeScene(Scene):
                     for block in self.block_group:
                         if block.rect.collidepoint(coords1) or block.rect.collidepoint(coords2) or block.rect.collidepoint(coords3):
                             if not self.godMode:
-                                self.manager.go_to(GameOverScene())
+                                self.manager.go_to(GameOverScene(self.level))
                             else:
                                 check_col = True
                 if not check_col:
@@ -240,7 +243,11 @@ class MazeScene(Scene):
                         self.stalker.walking_phase = self.stalker.walking_phase + 0.5
                         self.stalker.walking_phase %= 3
                         self.stalker.update_sprite()
-
+    def returnLevel(self):
+        if self.level:
+            return self.level
+        else:
+            return 0
 
 class MoveMouseScene(Scene):
     def __init__(self, difficulty):
@@ -271,28 +278,60 @@ class TitleScene(Scene):
         self.font = pygame.font.SysFont('Consolas', 56)
         self.sfont = pygame.font.SysFont('Consolas', 32)
         self.mixer = pygame.mixer.Channel(0)
-        self.mixer.set_volume(0.8)
+        self.mixer.set_volume(0.3)
         self.music = pygame.mixer.Sound(os.path.join('sounds', 'abba lite.ogg'))
         self.mixer.play(self.music)
         print("music")
         self.color = [50, 50, 50]
         self.colorLevel = [True, True, True]
         self.titletext = self.font.render('K' + u"\u00F6" + 'ttur og m' + u"\u00FA" + 's', True, tuple(self.color))
+        self.text1 = self.sfont.render('Hall of fame ', True, WHITE)
         self.text2 = self.sfont.render('Choose your difficulty: ', True, WHITE)
+
+        #self.txtbx = eztext.Input(maxlength=45, color=(255,0,0), prompt='type here: ')
         self.difficultyText = list()
-        self.difficultyText.append(SimpleSprite((420, 450), self.sfont.render('Easy Mode', True, WHITE)))
-        self.difficultyText.append(SimpleSprite((420, 500), self.sfont.render('Hard Mode', True, WHITE)))
-        self.difficultyText.append(SimpleSprite((420, 550), self.sfont.render('EXTREME MODE', True, WHITE)))
+        self.topten = list()
+        self.difficultyText.append(SimpleSprite((700, 300), self.sfont.render('Easy Mode', True, WHITE)))
+        self.difficultyText.append(SimpleSprite((700, 400), self.sfont.render('Hard Mode', True, WHITE)))
+        self.difficultyText.append(SimpleSprite((700, 500), self.sfont.render('Extreme Mode', True, WHITE)))
         self.menutext = pygame.sprite.Group(self.difficultyText)
         self.selected = 0
         self.check = -1
 
+        #connect to db and get the top 10
+        self.db = MySQLdb.connect("tsuts.tskoli.is", "0403983099","mypassword" , "0403983099_highscores")
+        if self.db:
+            print "connected"
+        cursor = self.db.cursor()
+
+        sql = "SELECT name, score FROM data ORDER BY score ASC"
+
+        try:
+            
+           # Execute the SQL command
+           cursor.execute(sql)
+           # Fetch all the rows in a list of lists.
+           results = cursor.fetchall()
+           for row in results:
+              name = row[0]
+              score = row[1]
+              # Now print fetched result
+              print name,"  -  " ,score
+              self.topten.append(SimpleSprite((200, 300), self.sfont.render('name and score', True, WHITE)))
+
+        except Exception as e:
+            raise
+
     def render(self, screen):
         self.titletext = self.font.render('K' + u"\u00F6" + 'ttur og m' + u"\u00FA" + 's', True, tuple(self.color))
+        #screen.blit(self.txtbx, (450, 200))
+
         screen.fill(BLACK)
         screen.blit(self.titletext, (450, 50))
-        screen.blit(self.text2, (420, 350))
+        screen.blit(self.text1, (250, 200))
+        screen.blit(self.text2, (620, 200))
         self.menutext.draw(screen)
+        #pygame.draw.rect(screen, WHITE, self.topten.rect, 1)
         pygame.draw.rect(screen, WHITE, self.difficultyText[self.selected].rect, 3)
 
     def update(self, time):
@@ -340,21 +379,68 @@ class TitleScene(Scene):
 
 
 class GameOverScene(Scene):
-    def __init__(self):
+    def __init__(self, level):
+        self.level = level
+        print self.level
+        self.mixer = pygame.mixer.Channel(0)
+        self.mixer.set_volume(0.5)
+        self.music = pygame.mixer.Sound(os.path.join('sounds', 'triggered.ogg'))
+        self.mixer.play(self.music)
+        self.txtbx = Input(maxlength=45, color=(255,0,0), prompt='type here: ')
+        self.hoverbox = Block(pygame.Rect(30 * drawSize, 16 * drawSize, drawSize, drawSize), GREEN)
+
         font = pygame.font.SysFont('Consolas', 56)
         small_font = pygame.font.SysFont('Consolas', 32)
         self.text = font.render('Game Over', True, WHITE)
         self.text2 = small_font.render('Press space to try again.', True, WHITE)
+        self.text3 = small_font.render('want to submit to leaderboards?', True, WHITE)
+        self.text4 = small_font.render('hover the box to submit your score', True, WHITE)
+        #text_width, text_height = small_font.size("self.text3")
+        #screen = pygame.display.set_mode((100, 100))
+        #self.inp = ask("what is your name?") #inp will equal whatever the input is
+
 
     def render(self, screen):
         screen.fill(BLACK)
-        screen.blit(self.text, (500, 50))
-        screen.blit(self.text2, (440, 120))
+        screen.blit(self.hoverbox.image, self.hoverbox.rect)
+        screen.blit(self.text,  (500, 50))
+        screen.blit(self.text2, (240, 120))
+        screen.blit(self.text3, (240, 200))
+        screen.blit(self.text4, (240, 260))
+        #screen.blit(self.inp, (440, 300))
+        self.txtbx.draw(screen)
+
+        pygame.display.flip()
 
     def update(self, time):
         pass
 
     def handle_events(self, events):
         for event in events:
+            self.txtbx.update(events)
             if event.type == KEYDOWN and event.key == K_SPACE:
                 self.manager.go_to(TitleScene())
+            if self.hoverbox.rect.collidepoint(pygame.mouse.get_pos()):
+                print "todo submit data to db"
+                print self.txtbx.value , " ", self.level 
+                # Open database connection
+                self.db = MySQLdb.connect("tsuts.tskoli.is", "0403983099","mypassword" , "0403983099_highscores")
+                if self.db:
+                    print "connected"
+
+                # prepare a cursor object using cursor() method
+                cursor = self.db.cursor()
+
+                # Prepare SQL query to INSERT a record into the database.
+                sql = "INSERT INTO data(name, score) VALUES (" ,self.txtbx.value ," ," ,self.level,")"
+                try:
+                   # Execute the SQL command
+                   cursor.execute(sql)
+                   # Commit your changes in the database
+                   self.db.commit()
+                except:
+                   # Rollback in case there is any error
+                   self.db.rollback()
+
+                # disconnect from server
+                self.db.close()

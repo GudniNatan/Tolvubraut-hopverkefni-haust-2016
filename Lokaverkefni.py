@@ -4,6 +4,7 @@ import threading
 import sys
 import os
 from Scenes import *
+from eztext import *
 
 def main():
     # Pygame stuff
@@ -29,7 +30,7 @@ def main():
         manager.scene.update(clock)
         manager.scene.render(screen)
         pygame.display.update()
-        clock.tick()
+        clock.tick(30)
 
     pygame.quit()
     sys.exit()
