@@ -14,7 +14,9 @@ Sæktu zip skránna af git og runnaðu "lokaverkefni.py"
 ## Resources
 
 Pygame - http://pygame.org/hifi.html
+
 EzText - http://pygame.org/project-EzText-920-.html
+
 MySQLdb - http://mysql-python.sourceforge.net/
 
 ## License
