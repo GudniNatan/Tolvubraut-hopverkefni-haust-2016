@@ -24,6 +24,18 @@ class Block(pygame.sprite.Sprite): # Simple block
         self.rect.topleft = rect.topleft
         self.image = pygame.transform.scale(self.image, (self.rect.w, self.rect.h))
 
+class TeleBlock(pygame.sprite.Sprite): # Simple block
+    def __init__(self, rect, color, image=None):
+        super(TeleBlock, self).__init__()
+        self.image = pygame.Surface([rect.w, rect.h])
+        self.image.fill(color)
+        if image is not None:
+            self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.topleft = rect.topleft
+        self.image = pygame.transform.scale(self.image, (self.rect.w, self.rect.h))
+
+
 
 class SimpleSprite(pygame.sprite.Sprite):
     def __init__(self, top_left_point, surface):
@@ -31,6 +43,19 @@ class SimpleSprite(pygame.sprite.Sprite):
         self.image = surface
         self.rect = surface.get_rect()
         self.rect.topleft = top_left_point
+
+
+class SimpleRectSprite(pygame.sprite.Sprite):  # Molds sprite to rect, either by cropping or rescaling
+    def __init__(self, rect, surface, scale=False):
+        super(SimpleRectSprite, self).__init__()
+        self.rect = pygame.Rect(rect)
+        self.image = surface
+        rect.topleft = (0, 0)
+        if not scale:
+            self.image = surface.subsurface(rect)
+        else:
+            self.image = pygame.transform.scale(surface, (rect.w, rect.h))
+
 
 class Animation(object):
     def __init__(self, name, params=dict()):
