@@ -1,6 +1,6 @@
 ## Synopsis
 
-Leikur þar sem spilari þarf að leysa völundarhús af aukandi erfiðleikastigum með músinni. Ef músin snertir vegg tapar leikmaður
+Leikur þar sem spilari þarf að leysa völundarhús af aukandi erfiðleikastigum með músinni. Hægt er að splila á þremur erfiðleikastigum.
 
 ## Motivation
 
@@ -9,11 +9,15 @@ Hópverkefni á tölvubraut, haust 2016
 ## Installation
 
 Þú þarft að hafa python 2.7 og pygame á tölvunni.
-Sæktu zip skránna af git og runnaðu "lokaverkefni.py"
+Sæktu zip skránna af git og runnaðu "lokaverkefni.py".
 
-## API Reference
+## Resources
 
-Setja API hér ef við notum
+Pygame - http://pygame.org/hifi.html
+
+EzText - http://pygame.org/project-EzText-920-.html
+
+MySQLdb - http://mysql-python.sourceforge.net/
 
 ## License
 
