@@ -92,7 +92,7 @@ class AStar:
         index_min = min(xrange(len(open_list)), key=open_list.__getitem__)
         return index_min
 
-    def find_path(self, grid, start, goal, search_range=-1):
+    def find_path(self, grid, start, goal, search_range=-1, absolute_max=250):
         if search_range != -1 and abs(sum(start) - sum(goal)) > search_range * 1.4:
             return None
         self.open_list = list()
@@ -114,7 +114,7 @@ class AStar:
         index = 0
         while index is not None:
             finish = self.handleNode(index)
-            if self.passcount > 250 or (search_range != -1 and self.passcount > search_range * 10):
+            if self.passcount > absolute_max or (search_range != -1 and self.passcount > search_range * 10):
                 break
             if finish:
                 if finish is None:

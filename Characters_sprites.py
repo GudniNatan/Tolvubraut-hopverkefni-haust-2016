@@ -14,6 +14,8 @@ class Character(pygame.sprite.Sprite):
         self.vy = 0
         self.realX = self.collision_rect.x
         self.realY = self.collision_rect.y
+        self.original_x = self.realX
+        self.original_y = self.realY
         self.startPoint = [self.collision_rect.x, self.collision_rect.y]
         self.gridPos = [self.collision_rect.center[0] / drawSize, self.collision_rect.center[1] / drawSize]
         self.baseSpeed = 0.08
@@ -92,17 +94,29 @@ class Character(pygame.sprite.Sprite):
         pass
 
     def update_position(self, time, collidables):
-        if time > 20:
-            time = 20
         if time == 0:
             pygame.time.wait(1)
             time = 1
         original_x = self.realX
         original_y = self.realY
-        self.realX += self.vx * time
-        self.realY += self.vy * time
+        self.original_x = original_x
+        self.original_y = original_y
+        pixellimit = 6 # should not ever be higher than drawsize / 2
+        if -pixellimit < self.vx * time < pixellimit:
+            self.realX += self.vx * time
+        elif self.vx < 0:
+            self.realX -= pixellimit
+        else:
+            self.realX += pixellimit
+        if -pixellimit < self.vy * time < pixellimit:
+            self.realY += self.vy * time
+        elif self.vy < 0:
+            self.realY -= pixellimit
+        else:
+            self.realY += pixellimit
         rect = self.collision_rect
         next_location = pygame.Rect(int(self.realX), int(self.realY), rect.w, rect.h)
+        collision = False
 
         for object in collidables:
             if object == self.collision_rect:
@@ -111,29 +125,32 @@ class Character(pygame.sprite.Sprite):
                     max(rect.center[1], object.rect.center[1]) - min(rect.center[1], object.rect.center[1]) > max(rect.h, object.rect.h) * 2):
                 continue
             if object.rect.colliderect(next_location):
-                    # Flats
-                    if self.vx > 0 and object.rect.colliderect(pygame.Rect(next_location.left + next_location.w, rect.top, 0, next_location.h)):    # Left
-                        self.realX = original_x
-                    if self.vx < 0 and object.rect.colliderect(pygame.Rect(next_location.right - next_location.w, rect.top, 0, next_location.h)):    # right
-                        self.realX = original_x
-                    if self.vy > 0 and object.rect.colliderect(pygame.Rect(rect.left, next_location.top + next_location.h, next_location.w, 0)):    # top
-                        self.realY = original_y
-                    if self.vy < 0 and object.rect.colliderect(pygame.Rect(rect.left, next_location.bottom - next_location.h, next_location.w, 0)):    # bottom
-                        self.realY = original_y
-                    # Corners
-                    if object.rect.collidepoint(rect.topleft[0] + 0.1, rect.topleft[1] + 0.1):
-                        [self.realX, self.realY] = [original_x + 0.1, original_y + 1.1]
-                    if object.rect.collidepoint(rect.bottomleft[0] + 0.1, rect.bottomleft[1] - 0.1):
-                        [self.realX, self.realY] = [original_x + 1.1, original_y - 0.1]
-                    if object.rect.collidepoint(rect.topright[0] - 0.1, rect.topright[1] + 0.1):
-                        [self.realX, self.realY] = [original_x - 0.1, original_y + 1.1]
-                    if object.rect.collidepoint(rect.bottomright[0] - 0.1, rect.bottomright[1] - 0.1):
-                        [self.realX, self.realY] = [original_x - 1.1, original_y - 0.1]
+                collision = True
+                # Flats
+                if self.vx > 0 and object.rect.colliderect(pygame.Rect(next_location.left + next_location.w, rect.top, 0, next_location.h)):    # Left
+                    self.realX = object.rect.left - next_location.w
+                if self.vx < 0 and object.rect.colliderect(pygame.Rect(next_location.right - next_location.w, rect.top, 0, next_location.h)):    # right
+                    self.realX = object.rect.right
+                if self.vy > 0 and object.rect.colliderect(pygame.Rect(rect.left, next_location.top + next_location.h, next_location.w, 0)):    # top
+                    self.realY = object.rect.top - next_location.h
+                if self.vy < 0 and object.rect.colliderect(pygame.Rect(rect.left, next_location.bottom - next_location.h, next_location.w, 0)):    # bottom
+                    self.realY = object.rect.bottom
+                # Corners
+                """if object.rect.collidepoint(rect.topleft[0] + 0.1, rect.topleft[1] + 0.1):
+                    [self.realX, self.realY] = [original_x + 0.1, original_y + 1.1]
+                if object.rect.collidepoint(rect.bottomleft[0] + 0.1, rect.bottomleft[1] - 0.1):
+                    [self.realX, self.realY] = [original_x + 1.1, original_y - 0.1]
+                if object.rect.collidepoint(rect.topright[0] - 0.1, rect.topright[1] + 0.1):
+                    [self.realX, self.realY] = [original_x - 0.1, original_y + 1.1]
+                if object.rect.collidepoint(rect.bottomright[0] - 0.1, rect.bottomright[1] - 0.1):
+                    [self.realX, self.realY] = [original_x - 1.1, original_y - 0.1]"""
 
-            if object.rect.collidepoint(rect.center):   # Moves you out if fully inside a block
+            if object.rect.collidepoint(rect.center):   # Moves character out if fully inside a block
                 [self.realX, self.realY] = self.startPoint
         self.collision_rect.x = self.realX
         self.collision_rect.y = self.realY
+        if collision == False:
+            self.startPoint = self.collision_rect
         self.gridPos = [self.collision_rect.center[0] / drawSize, self.collision_rect.center[1] / drawSize]
         self.rect.midbottom = self.collision_rect.midbottom
 
@@ -179,12 +196,12 @@ class NPC(Character):
         self.pathBricks = list()
         self.pathfinder = AStar()
 
-    def update_path(self, grid, position, destination):
+    def update_path(self, grid, position, destination, search_range=-1, absolute_max=250):
         # NPC Pathfinding
-        p = self.pathfinder.find_path(grid, position, destination)
+        p = self.pathfinder.find_path(grid, position, destination, search_range, absolute_max)
         path = list()
         if p is not None:
-            self.path = p.nodes
+            self.path = list(p.nodes)
             for n in p.nodes:
                 path.append(Brick(n.value[0] * drawSize, n.value[1] * drawSize, drawSize))
             self.pathBricks = path
@@ -195,6 +212,7 @@ class Stalker(NPC):
         super(Stalker, self).__init__(rect, charset, sprite_size_rect)
         self.baseSpeed = 0.09
         self.followPlayer = True
+        self.next_square = 0
 
     def update_speed(self):
         # Follows path
@@ -203,26 +221,43 @@ class Stalker(NPC):
             self.vx = 0
             self.vy = 0
             return
-        speed = self.baseSpeed
+        speed = round(self.baseSpeed, 2)
         rect = self.collision_rect
         next_loc = path[0].value
         next_square = pygame.Rect(next_loc[0] * drawSize, next_loc[1] * drawSize, drawSize, drawSize)
-        if next_square.contains(rect):
+        self.next_square = pygame.Rect(next_square)
+        if next_square.contains(self.collision_rect):
             self.path.pop(0)
-            self.update_speed()
             return
-        if rect.right <= next_square.right and rect.left < next_square.left:
+        if rect.right < next_square.right and rect.left < next_square.left:
             self.vx = speed
-        elif rect.left >= next_square.left and rect.right > next_square.right:
+        elif rect.left > next_square.left and rect.right > next_square.right:
             self.vx = -speed
         else:
             self.vx = 0
-        if rect.bottom <= next_square.bottom and rect.top < next_square.top:
+        if rect.bottom < next_square.bottom and rect.top < next_square.top:
             self.vy = speed
-        elif rect.top >= next_square.top and rect.bottom > next_square.bottom:
+        elif rect.top > next_square.top and rect.bottom > next_square.bottom:
             self.vy = -speed
         else:
             self.vy = 0
         if self.charset:
             self.set_sprite_direction()
 
+    def update_position(self, time, collidables):
+        super(Stalker, self).update_position(time, collidables)
+        if self.path is None or not self.path:
+            return
+        testrect = pygame.Rect(self.collision_rect)
+        if self.original_x - self.realX > 0:
+            testrect.w -= (self.original_x - self.realX)
+        if self.original_x - self.realX < 0:
+            testrect.w += (self.original_x - self.realX)
+            testrect.x -= (self.original_x - self.realX)
+        if self.original_y - self.realY > 0:
+            testrect.h -= (self.original_y - self.realY)
+        if self.original_y - self.realY < 0:
+            testrect.h += (self.original_y - self.realY)
+            testrect.y -= (self.original_y - self.realY)
+        if testrect != 0 and self.next_square and self.next_square.contains(testrect):
+            self.path.pop(0)

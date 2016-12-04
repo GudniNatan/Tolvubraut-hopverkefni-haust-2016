@@ -39,14 +39,10 @@ class MazeScene(Scene):
         super(MazeScene, self).__init__()
         # Generate maze
         print("new level")
-        walls = pygame.image.load(os.path.join('images', 'veggur test 4.png')).convert_alpha()
+        walls = pygame.image.load(os.path.join('images', 'veggur.png')).convert_alpha()
         self.level = level
         mazeGenerator = Generator()
         self.grid = Grid(GRID_SIZE)
-        self.mazefloor_count_Y = 0
-        self.mazefloor_count_X = 0
-        self.mazefloor_arr =  []
-
         if level > 14:
             level = 14
         self.maze = mazeGenerator.generate(0, 0, 2 + level, 2 + level)
@@ -73,6 +69,7 @@ class MazeScene(Scene):
         self.wall_tile = pygame.transform.smoothscale(self.wall_tile, (self.levelDrawSize, self.levelDrawSize))
         self.tele1_tile = pygame.image.load(os.path.join('images', 'tele1.png')).convert_alpha()
         self.tele2_tile = pygame.image.load(os.path.join('images', 'tele2.png')).convert_alpha()
+        self.cat_charset = pygame.image.load(os.path.join('images', 'mjaaaaaaaa.png')).convert_alpha()
 
         if self.level % 2:
             self.exit = Block(pygame.Rect(mazeBox.left + levelDrawSize, mazeBox.top, levelDrawSize, levelDrawSize), GREEN)
@@ -89,11 +86,6 @@ class MazeScene(Scene):
 
         for i in range(len(self.maze)):
             for j in range(len(self.maze[i])):
-                """if self.maze[i][j] == 0:
-                    if not (i == len(self.maze) - 2 and j == len(self.maze[i]) - 1):
-                        if not (i == 1 and j == 0):
-                            self.block_group.add(Block(pygame.Rect(i * levelDrawSize + mazeBox.left, j * levelDrawSize + mazeBox.top, levelDrawSize, levelDrawSize), BLACK, self.wall_tile))"""
-
                 if self.maze[i][j] == 0:
                     sliced = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
                     if 1 < i:
@@ -112,7 +104,6 @@ class MazeScene(Scene):
                             sliced[2][0] = self.maze[i+1][j-1]
                         if j < (len(self.maze[i]) - 1):
                             sliced[2][2] = self.maze[i+1][j+1]
-
                     rect = pygame.Rect(j * drawSize, i * drawSize, 24, 24)
                     sprite = Block(rect, BLACK)
                     rotated = list(sliced)
@@ -127,14 +118,11 @@ class MazeScene(Scene):
                                 innerRect.topleft = (24, 0)
                         elif rotated[0][1]:
                             innerRect.topleft = (12, 0)
-
                             # wall facing up
                         elif rotated[0][0]:
                             innerRect.topleft = (0, 12)
-
                             # closed corner
                         sprite.image.blit(walls.subsurface(innerRect), (0, 0))
-
                         rotated = zip(*rotated[::-1])
                         sprite.image = pygame.transform.rotate(sprite.image, -90)
                     rect = pygame.Rect(j * drawSize, i * drawSize, drawSize, drawSize)
@@ -147,7 +135,7 @@ class MazeScene(Scene):
 
         self.stalker = None
         if level >= 5 and difficulty > 0:
-            pygame.time.set_timer(stalkerEvent, 5000)  # Spawn stalker after 5 seconds
+            pygame.time.set_timer(stalkerEvent, 5000 - (self.level * 50 if level < 50 else 250))  # Spawn stalker after 5 seconds
         topcap.rect.y -= levelDrawSize
         bottomcap.rect.y += levelDrawSize
         self.grid.update_grid(pygame.sprite.Group(self.block_group, topcap, bottomcap), self.levelDrawSize)
@@ -157,18 +145,15 @@ class MazeScene(Scene):
             rect2 = pygame.Rect(random.randrange((len(self.maze) / 2) if (len(self.maze) / 2) % 2 else (len(self.maze) / 2) + 1, len(self.maze)-1, 2)*levelDrawSize + mazeBox.left, random.randrange(1, len(self.maze[0]), 2)*levelDrawSize + mazeBox.top, drawSize, drawSize)
             self.tele1 = TeleBlock(rect1, BLACK, self.tele1_tile)
             self.tele2 = TeleBlock(rect2, BLACK, self.tele2_tile)
-
         else:
             self.tele1 = 0
             self.tele2 = 0
 
     def render(self, screen):
-        screen.fill(WHITE)
+        screen.fill(GREY)
         for i in xrange(self.mazeBox.w / self.levelDrawSize):
             for j in xrange(self.mazeBox.h / self.levelDrawSize):
                 screen.blit(self.floor_tile, (i * self.levelDrawSize + self.mazeBox.left, j * self.levelDrawSize + self.mazeBox.top))
-
-
         self.block_group.draw(screen)
         screen.blit(self.exit.image, self.exit.rect)
         screen.blit(self.entrance.image, self.entrance.rect)
@@ -177,13 +162,16 @@ class MazeScene(Scene):
             screen.blit(self.tele2.image, self.tele2.rect)
         if self.stalker:
             screen.blit(self.stalker.image, self.stalker.rect)
+            """if self.stalker.next_square != 0:
+                screen.blit(self.stalker.image, self.stalker.next_square)
+                pass"""
         pygame.draw.rect(screen, BLACK, self.mazeBox, 3)
 
     def update(self, time):
         if self.stalker is not None:
             self.stalker.update_speed()
             self.stalker.update_position(time.get_time(), self.block_group)
-            if self.stalker.rect.collidepoint(pygame.mouse.get_pos()):
+            if self.stalker.rect.collidepoint(self.last_pos):
                 self.manager.go_to(GameOverScene())
 
     def handle_events(self, events):
@@ -193,16 +181,14 @@ class MazeScene(Scene):
             if event.type == stalkerEvent and not self.stalker:
                 pygame.time.set_timer(stalkerEvent, 0)  # Stops timer after running once
                 stalkerRect = pygame.Rect(self.entrance.rect)
-                stalkerRect.h -= 1
-                stalkerRect.w -= 1
-                self.stalker = Stalker(stalkerRect, 0, 0)
-                self.stalker.baseSpeed += (-0.05) + self.level * 0.01
-                pygame.event.post(pygame.event.Event(pathfindingEvent))
+                self.stalker = Stalker(stalkerRect, self.cat_charset, (24,24,20))
+                self.stalker.baseSpeed += round((-0.05) + self.level * 0.01, 2)
+                #pygame.event.post(pygame.event.Event(pathfindingEvent))
                 pygame.time.set_timer(pathfindingEvent, 500)
             if event.type == pathfindingEvent and self.stalker:
-                mouse_grid_pos = [pygame.mouse.get_pos()[0] / self.levelDrawSize, pygame.mouse.get_pos()[1] / self.levelDrawSize]
-                stalker_grid_pos = [self.stalker.collision_rect.x / self.levelDrawSize, self.stalker.collision_rect.y / self.levelDrawSize]
-                self.stalker.update_path(self.grid.grid, stalker_grid_pos, mouse_grid_pos)
+                mouse_grid_pos = [self.last_pos[0] / self.levelDrawSize, self.last_pos[1] / self.levelDrawSize]
+                stalker_grid_pos = [self.stalker.collision_rect.centerx / self.levelDrawSize, self.stalker.collision_rect.centery / self.levelDrawSize]
+                self.stalker.update_path(self.grid.grid, stalker_grid_pos, mouse_grid_pos, -1, 1000)
             if event.type == MOUSEMOTION:
                 distance = (-(self.last_pos[0] - pygame.mouse.get_pos()[0]), -(self.last_pos[1] - pygame.mouse.get_pos()[1]))
                 dist2 = ((distance[0] * distance[0]) + (distance[1] * distance[1]))
@@ -237,22 +223,23 @@ class MazeScene(Scene):
                     pygame.mouse.set_pos(self.last_pos)
                 if self.exit.rect.collidepoint(self.last_pos):
                     self.manager.go_to(MazeScene(self.level+1, self.difficulty))
-
-
-
             if event.type == MOUSEBUTTONDOWN and event.button == 1:
                 if self.tele1 and self.tele2 and self.tele1.rect.collidepoint(self.last_pos):
                     pygame.mouse.set_pos(self.tele2.rect.center)
                     self.last_pos = self.tele2.rect.center
                     self.tele1 = 0
                     self.tele2 = 0
-
                 elif self.tele1 and self.tele2 and self.tele2.rect.collidepoint(self.last_pos):
                     pygame.mouse.set_pos(self.tele1.rect.center)
                     self.last_pos = self.tele1.rect.center
                     self.tele1 = 0
                     self.tele2 = 0
-
+            if event.type == animationEvent:
+                if self.stalker:
+                    if self.stalker.moving:
+                        self.stalker.walking_phase = self.stalker.walking_phase + 0.5
+                        self.stalker.walking_phase %= 3
+                        self.stalker.update_sprite()
 
 
 class MoveMouseScene(Scene):
@@ -290,7 +277,7 @@ class TitleScene(Scene):
         print("music")
         self.color = [50, 50, 50]
         self.colorLevel = [True, True, True]
-        self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
+        self.titletext = self.font.render('K' + u"\u00F6" + 'ttur og m' + u"\u00FA" + 's', True, tuple(self.color))
         self.text2 = self.sfont.render('Choose your difficulty: ', True, WHITE)
         self.difficultyText = list()
         self.difficultyText.append(SimpleSprite((420, 450), self.sfont.render('Easy Mode', True, WHITE)))
@@ -301,14 +288,12 @@ class TitleScene(Scene):
         self.check = -1
 
     def render(self, screen):
-        self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
-
+        self.titletext = self.font.render('K' + u"\u00F6" + 'ttur og m' + u"\u00FA" + 's', True, tuple(self.color))
         screen.fill(BLACK)
         screen.blit(self.titletext, (450, 50))
         screen.blit(self.text2, (420, 350))
         self.menutext.draw(screen)
         pygame.draw.rect(screen, WHITE, self.difficultyText[self.selected].rect, 3)
-
 
     def update(self, time):
         pass
@@ -352,44 +337,6 @@ class TitleScene(Scene):
                     self.manager.go_to(MoveMouseScene(self.check))
                 else:
                     self.check = -1
-
-class TextScrollScene(Scene):
-
-    def __init__(self, text):
-        f = codecs.open(os.path.join('text', 'text' + str(text)) + ".txt", encoding='utf-8-sig')
-        lines = f.readlines()
-        self.text = ""
-        for i in range(len(lines)):
-            lines[i] = lines[i][:-1]
-            self.text += lines[i] + "\n"
-        self.livetext = ""
-        self.font = pygame.font.SysFont('Consolas', 20)
-        self.blanks = 0
-        self.text_number = text
-
-    def render(self, screen):
-        screen.fill(BLACK)
-        lines = self.livetext.splitlines()
-        for i in range(len(lines)):
-            text1 = self.font.render(lines[i], True, WHITE)
-            screen.blit(text1, (20, 50 + i*self.font.get_linesize()))
-
-    def update(self, time):
-        pass
-
-    def handle_events(self, events):
-        for event in events:
-            if event.type == KEYDOWN:
-                if self.text_number == 1:
-                    self.manager.go_to(TitleScene())
-                else:
-                    self.manager.go_to(TextScrollScene(self.text_number + 1))
-            if event.type == animationEvent:
-                if len(self.livetext) + self.blanks != len(self.text):
-                    if self.text[len(self.livetext)+self.blanks] == "|":
-                        self.blanks += 1
-                    else:
-                        self.livetext += self.text[len(self.livetext)+self.blanks]
 
 
 class GameOverScene(Scene):
