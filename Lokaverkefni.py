@@ -31,7 +31,7 @@ def main():
         manager.scene.update(clock)
         manager.scene.render(screen)
         pygame.display.update()
-        clock.tick(30)
+        clock.tick()
 
     pygame.quit()
     sys.exit()

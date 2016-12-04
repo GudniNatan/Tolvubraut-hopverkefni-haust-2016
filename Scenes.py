@@ -432,8 +432,8 @@ class GameOverScene(Scene):
             print("true")
 
     def handle_events(self, events):
+        self.txtbx.update(events)
         for event in events:
-            self.txtbx.update(events)
             if event.type == KEYDOWN and event.key == K_SPACE:
                 self.manager.go_to(TitleScene())
 
