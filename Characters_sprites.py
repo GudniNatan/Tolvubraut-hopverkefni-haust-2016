@@ -246,6 +246,8 @@ class Stalker(NPC):
 
     def update_position(self, time, collidables):
         super(Stalker, self).update_position(time, collidables)
+        if self.path is None or not self.path:
+            return
         testrect = pygame.Rect(self.collision_rect)
         if self.original_x - self.realX > 0:
             testrect.w -= (self.original_x - self.realX)

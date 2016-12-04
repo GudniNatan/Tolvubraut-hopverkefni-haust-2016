@@ -69,6 +69,7 @@ class MazeScene(Scene):
         self.wall_tile = pygame.transform.smoothscale(self.wall_tile, (self.levelDrawSize, self.levelDrawSize))
         self.tele1_tile = pygame.image.load(os.path.join('images', 'tele1.png')).convert_alpha()
         self.tele2_tile = pygame.image.load(os.path.join('images', 'tele2.png')).convert_alpha()
+        self.cat_charset = pygame.image.load(os.path.join('images', 'mjaaaaaaaa.png')).convert_alpha()
 
         if self.level % 2:
             self.exit = Block(pygame.Rect(mazeBox.left + levelDrawSize, mazeBox.top, levelDrawSize, levelDrawSize), GREEN)
@@ -180,7 +181,7 @@ class MazeScene(Scene):
             if event.type == stalkerEvent and not self.stalker:
                 pygame.time.set_timer(stalkerEvent, 0)  # Stops timer after running once
                 stalkerRect = pygame.Rect(self.entrance.rect)
-                self.stalker = Stalker(stalkerRect, 0, 0)
+                self.stalker = Stalker(stalkerRect, self.cat_charset, (24,24,20))
                 self.stalker.baseSpeed += round((-0.05) + self.level * 0.01, 2)
                 #pygame.event.post(pygame.event.Event(pathfindingEvent))
                 pygame.time.set_timer(pathfindingEvent, 500)
@@ -233,6 +234,12 @@ class MazeScene(Scene):
                     self.last_pos = self.tele1.rect.center
                     self.tele1 = 0
                     self.tele2 = 0
+            if event.type == animationEvent:
+                if self.stalker:
+                    if self.stalker.moving:
+                        self.stalker.walking_phase = self.stalker.walking_phase + 0.5
+                        self.stalker.walking_phase %= 3
+                        self.stalker.update_sprite()
 
 
 class MoveMouseScene(Scene):
@@ -270,7 +277,7 @@ class TitleScene(Scene):
         print("music")
         self.color = [50, 50, 50]
         self.colorLevel = [True, True, True]
-        self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
+        self.titletext = self.font.render('K' + u"\u00F6" + 'ttur og m' + u"\u00FA" + 's', True, tuple(self.color))
         self.text2 = self.sfont.render('Choose your difficulty: ', True, WHITE)
         self.difficultyText = list()
         self.difficultyText.append(SimpleSprite((420, 450), self.sfont.render('Easy Mode', True, WHITE)))
@@ -281,7 +288,7 @@ class TitleScene(Scene):
         self.check = -1
 
     def render(self, screen):
-        self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
+        self.titletext = self.font.render('K' + u"\u00F6" + 'ttur og m' + u"\u00FA" + 's', True, tuple(self.color))
         screen.fill(BLACK)
         screen.blit(self.titletext, (450, 50))
         screen.blit(self.text2, (420, 350))
