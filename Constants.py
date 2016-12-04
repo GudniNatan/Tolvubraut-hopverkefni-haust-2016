@@ -6,6 +6,7 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 102, 255)
 ORANGE = (255, 153, 0)
+GREY = (150, 150, 150)
 
 GRID_SIZE = [60, 60]     # Width and height of maze (can fit 355x635 if drawSize is 1)
 drawSize = 20

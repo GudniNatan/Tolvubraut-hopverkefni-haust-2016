@@ -39,14 +39,10 @@ class MazeScene(Scene):
         super(MazeScene, self).__init__()
         # Generate maze
         print("new level")
-        walls = pygame.image.load(os.path.join('images', 'veggur test 4.png')).convert_alpha()
+        walls = pygame.image.load(os.path.join('images', 'veggur.png')).convert_alpha()
         self.level = level
         mazeGenerator = Generator()
         self.grid = Grid(GRID_SIZE)
-        self.mazefloor_count_Y = 0
-        self.mazefloor_count_X = 0
-        self.mazefloor_arr =  []
-
         if level > 14:
             level = 14
         self.maze = mazeGenerator.generate(0, 0, 2 + level, 2 + level)
@@ -157,18 +153,15 @@ class MazeScene(Scene):
             rect2 = pygame.Rect(random.randrange((len(self.maze) / 2) if (len(self.maze) / 2) % 2 else (len(self.maze) / 2) + 1, len(self.maze)-1, 2)*levelDrawSize + mazeBox.left, random.randrange(1, len(self.maze[0]), 2)*levelDrawSize + mazeBox.top, drawSize, drawSize)
             self.tele1 = TeleBlock(rect1, BLACK, self.tele1_tile)
             self.tele2 = TeleBlock(rect2, BLACK, self.tele2_tile)
-
         else:
             self.tele1 = 0
             self.tele2 = 0
 
     def render(self, screen):
-        screen.fill(WHITE)
+        screen.fill(GREY)
         for i in xrange(self.mazeBox.w / self.levelDrawSize):
             for j in xrange(self.mazeBox.h / self.levelDrawSize):
                 screen.blit(self.floor_tile, (i * self.levelDrawSize + self.mazeBox.left, j * self.levelDrawSize + self.mazeBox.top))
-
-
         self.block_group.draw(screen)
         screen.blit(self.exit.image, self.exit.rect)
         screen.blit(self.entrance.image, self.entrance.rect)
@@ -237,22 +230,17 @@ class MazeScene(Scene):
                     pygame.mouse.set_pos(self.last_pos)
                 if self.exit.rect.collidepoint(self.last_pos):
                     self.manager.go_to(MazeScene(self.level+1, self.difficulty))
-
-
-
             if event.type == MOUSEBUTTONDOWN and event.button == 1:
                 if self.tele1 and self.tele2 and self.tele1.rect.collidepoint(self.last_pos):
                     pygame.mouse.set_pos(self.tele2.rect.center)
                     self.last_pos = self.tele2.rect.center
                     self.tele1 = 0
                     self.tele2 = 0
-
                 elif self.tele1 and self.tele2 and self.tele2.rect.collidepoint(self.last_pos):
                     pygame.mouse.set_pos(self.tele1.rect.center)
                     self.last_pos = self.tele1.rect.center
                     self.tele1 = 0
                     self.tele2 = 0
-
 
 
 class MoveMouseScene(Scene):
@@ -302,13 +290,11 @@ class TitleScene(Scene):
 
     def render(self, screen):
         self.titletext = self.font.render('Lokaverkefni', True, tuple(self.color))
-
         screen.fill(BLACK)
         screen.blit(self.titletext, (450, 50))
         screen.blit(self.text2, (420, 350))
         self.menutext.draw(screen)
         pygame.draw.rect(screen, WHITE, self.difficultyText[self.selected].rect, 3)
-
 
     def update(self, time):
         pass
@@ -352,44 +338,6 @@ class TitleScene(Scene):
                     self.manager.go_to(MoveMouseScene(self.check))
                 else:
                     self.check = -1
-
-class TextScrollScene(Scene):
-
-    def __init__(self, text):
-        f = codecs.open(os.path.join('text', 'text' + str(text)) + ".txt", encoding='utf-8-sig')
-        lines = f.readlines()
-        self.text = ""
-        for i in range(len(lines)):
-            lines[i] = lines[i][:-1]
-            self.text += lines[i] + "\n"
-        self.livetext = ""
-        self.font = pygame.font.SysFont('Consolas', 20)
-        self.blanks = 0
-        self.text_number = text
-
-    def render(self, screen):
-        screen.fill(BLACK)
-        lines = self.livetext.splitlines()
-        for i in range(len(lines)):
-            text1 = self.font.render(lines[i], True, WHITE)
-            screen.blit(text1, (20, 50 + i*self.font.get_linesize()))
-
-    def update(self, time):
-        pass
-
-    def handle_events(self, events):
-        for event in events:
-            if event.type == KEYDOWN:
-                if self.text_number == 1:
-                    self.manager.go_to(TitleScene())
-                else:
-                    self.manager.go_to(TextScrollScene(self.text_number + 1))
-            if event.type == animationEvent:
-                if len(self.livetext) + self.blanks != len(self.text):
-                    if self.text[len(self.livetext)+self.blanks] == "|":
-                        self.blanks += 1
-                    else:
-                        self.livetext += self.text[len(self.livetext)+self.blanks]
 
 
 class GameOverScene(Scene):
