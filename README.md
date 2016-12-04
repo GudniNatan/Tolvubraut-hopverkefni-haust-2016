@@ -1,6 +1,6 @@
 ## Synopsis
 
-Leikur þar sem spilari þarf að leysa völundarhús af aukandi erfiðleikastigum með músinni. Ef músin snertir vegg tapar leikmaður
+Leikur þar sem spilari þarf að leysa völundarhús af aukandi erfiðleikastigum með músinni. Hægt er að splila á þremur erfiðleikastigum
 
 ## Motivation
 
