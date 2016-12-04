@@ -11,9 +11,11 @@ Hópverkefni á tölvubraut, haust 2016
 Þú þarft að hafa python 2.7 og pygame á tölvunni.
 Sæktu zip skránna af git og runnaðu "lokaverkefni.py"
 
-## API Reference
+## Resources
 
-Setja API hér ef við notum
+Pygame - http://pygame.org/hifi.html
+EzText - http://pygame.org/project-EzText-920-.html
+MySQLdb - http://mysql-python.sourceforge.net/
 
 ## License
 
