@@ -24,6 +24,18 @@ class Block(pygame.sprite.Sprite):  # Simple block
         self.rect.topleft = rect.topleft
         self.image = pygame.transform.scale(self.image, (self.rect.w, self.rect.h))
 
+class TeleBlock(pygame.sprite.Sprite): # Simple block
+    def __init__(self, rect, color, image=None):
+        super(TeleBlock, self).__init__()
+        self.image = pygame.Surface([rect.w, rect.h])
+        self.image.fill(color)
+        if image is not None:
+            self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.topleft = rect.topleft
+        self.image = pygame.transform.scale(self.image, (self.rect.w, self.rect.h))
+
+
 
 class TeleBlock(pygame.sprite.Sprite):  # Teleporter block
     def __init__(self, rect, color, image=None):
