@@ -326,7 +326,7 @@ class TitleScene(Scene):
             print "connected"
         cursor = self.db.cursor()
 
-        sql = "SELECT name, score FROM data ORDER BY score DESC"
+        sql = "SELECT name, score FROM data ORDER BY score DESC LIMIT 9"
 
         try:
 
@@ -439,7 +439,8 @@ class GameOverScene(Scene):
     def handle_events(self, events):
         self.txtbx.update(events)
         for event in events:
-            if event.type == KEYDOWN and event.key == K_SPACE:
+            if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_ESCAPE):
+                self.mixer.fadeout(500)
                 self.manager.go_to(TitleScene())
 
 
@@ -478,4 +479,5 @@ class uploadToDb(object):
     def handle_events(self, events):
         for event in events:
             if event.type == KEYDOWN and event.key == K_SPACE:
+                self.mixer.fadeout(500)
                 self.manager.go_to(TitleScene())
