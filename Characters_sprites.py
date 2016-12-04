@@ -179,9 +179,9 @@ class NPC(Character):
         self.pathBricks = list()
         self.pathfinder = AStar()
 
-    def update_path(self, grid, position, destination):
+    def update_path(self, grid, position, destination, search_range=-1, absolute_max=250):
         # NPC Pathfinding
-        p = self.pathfinder.find_path(grid, position, destination)
+        p = self.pathfinder.find_path(grid, position, destination, search_range, absolute_max)
         path = list()
         if p is not None:
             self.path = p.nodes

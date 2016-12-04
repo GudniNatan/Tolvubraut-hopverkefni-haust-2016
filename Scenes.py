@@ -143,7 +143,7 @@ class MazeScene(Scene):
 
         self.stalker = None
         if level >= 5 and difficulty > 0:
-            pygame.time.set_timer(stalkerEvent, 5000)  # Spawn stalker after 5 seconds
+            pygame.time.set_timer(stalkerEvent, 5000 - (self.level * 50 if level < 50 else 250))  # Spawn stalker after 5 seconds
         topcap.rect.y -= levelDrawSize
         bottomcap.rect.y += levelDrawSize
         self.grid.update_grid(pygame.sprite.Group(self.block_group, topcap, bottomcap), self.levelDrawSize)
@@ -176,7 +176,7 @@ class MazeScene(Scene):
         if self.stalker is not None:
             self.stalker.update_speed()
             self.stalker.update_position(time.get_time(), self.block_group)
-            if self.stalker.rect.collidepoint(pygame.mouse.get_pos()):
+            if self.stalker.rect.collidepoint(self.last_pos):
                 self.manager.go_to(GameOverScene())
 
     def handle_events(self, events):
@@ -189,13 +189,13 @@ class MazeScene(Scene):
                 stalkerRect.h -= 1
                 stalkerRect.w -= 1
                 self.stalker = Stalker(stalkerRect, 0, 0)
-                self.stalker.baseSpeed += (-0.05) + self.level * 0.01
+                self.stalker.baseSpeed += 0.03
                 pygame.event.post(pygame.event.Event(pathfindingEvent))
                 pygame.time.set_timer(pathfindingEvent, 500)
             if event.type == pathfindingEvent and self.stalker:
-                mouse_grid_pos = [pygame.mouse.get_pos()[0] / self.levelDrawSize, pygame.mouse.get_pos()[1] / self.levelDrawSize]
+                mouse_grid_pos = [self.last_pos[0] / self.levelDrawSize, self.last_pos[1] / self.levelDrawSize]
                 stalker_grid_pos = [self.stalker.collision_rect.x / self.levelDrawSize, self.stalker.collision_rect.y / self.levelDrawSize]
-                self.stalker.update_path(self.grid.grid, stalker_grid_pos, mouse_grid_pos)
+                self.stalker.update_path(self.grid.grid, stalker_grid_pos, mouse_grid_pos, -1, 1000)
             if event.type == MOUSEMOTION:
                 distance = (-(self.last_pos[0] - pygame.mouse.get_pos()[0]), -(self.last_pos[1] - pygame.mouse.get_pos()[1]))
                 dist2 = ((distance[0] * distance[0]) + (distance[1] * distance[1]))
