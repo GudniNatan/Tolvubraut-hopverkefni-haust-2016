@@ -36,7 +36,7 @@ class Scene(object):
 
 
 class MazeScene(Scene):
-    def __init__(self, level, difficulty=0):
+    def __init__(self, level=0, difficulty=0):
         super(MazeScene, self).__init__()
         # Generate maze
         print("new level")
@@ -406,8 +406,8 @@ class TitleScene(Scene):
 
 
 class GameOverScene(Scene):
+
     def __init__(self, level):
-                
         self.mixer = pygame.mixer.Channel(0)
         self.mixer.set_volume(0.5)
         self.music = pygame.mixer.Sound(os.path.join('sounds', 'gameover.ogg'))
@@ -433,7 +433,7 @@ class GameOverScene(Scene):
 
     def update(self, time):
         if self.hoverman.rect.collidepoint(pygame.mouse.get_pos()):
-            self.manager.go_to(uploadToDb(self.txtbx.value, self.level))
+            self.manager.go_to(uploadToDb(self.txtbx.value, self.level, self.mixer))
             print("true")
 
     def handle_events(self, events):
@@ -444,13 +444,14 @@ class GameOverScene(Scene):
                 self.manager.go_to(TitleScene())
 
 
-class uploadToDb(object):
+class uploadToDb(Scene):
     """docstring for uploadToDb"""
 
-    def __init__(self, name, level):
+    def __init__(self, name, level, mixer):
         font = pygame.font.SysFont('Consolas', 32)
         self.name = name
         self.level = level
+        self.mixer = mixer
         self.text1 = font.render('score has been uploaded', True, WHITE)
         self.text2 = font.render("press space to go to menu", True, WHITE)
         self.string = font.render(str(self.name) + " scored " + str(self.level), True, WHITE)
