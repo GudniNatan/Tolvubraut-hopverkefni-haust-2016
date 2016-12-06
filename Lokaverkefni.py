@@ -11,7 +11,7 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode(window_size, pygame.RESIZABLE)
     clock = pygame.time.Clock()
-    pygame.display.set_caption('FOR3G3U')
+    pygame.display.set_caption("Hopverkefni haustonn, 2016")
 
     # Setup
     charset = pygame.image.load(os.path.join('images', 'charset.png')).convert_alpha()
