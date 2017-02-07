@@ -20,7 +20,10 @@ def main():
     gridImage = pygame.transform.scale(gridImage, (gridImage.get_rect().w * 24 / 16, gridImage.get_rect().h * 24 / 16))
 
     manager = SceneManager()
-    pygame.mixer.init()
+    try:
+        pygame.mixer.init()
+    except Exception:
+        pass
 
     running = True
     while running:  # Game loop
