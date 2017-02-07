@@ -3,7 +3,10 @@ import os
 import random
 import codecs
 import copy
-import MySQLdb
+try:
+    import MySQLdb
+except Exception:
+    pass
 from generateMaze import Generator
 from Constants import *
 from Characters_sprites import *
@@ -301,11 +304,15 @@ class TitleScene(Scene):
         super(TitleScene, self).__init__()
         self.font = pygame.font.SysFont('Consolas', 56)
         self.sfont = pygame.font.SysFont('Consolas', 32)
-        self.mixer = pygame.mixer.Channel(0)
-        self.mixer.set_volume(0.8)
-        self.music = pygame.mixer.Sound(os.path.join('sounds', 'abba lite.ogg'))
-        self.mixer.play(self.music)
-        print("music")
+        try:
+            self.mixer = pygame.mixer.Channel(0)
+            self.mixer.set_volume(0.8)
+            self.music = pygame.mixer.Sound(os.path.join('sounds', 'abba lite.ogg'))
+            self.mixer.play(self.music)
+            print("music")
+        except Exception:
+            pass
+
         self.color = [50, 50, 50]
         self.colorLevel = [True, True, True]
         self.titletext = self.font.render('K' + u"\u00F6" + 'ttur og m' + u"\u00FA" + 's', True, tuple(self.color))
@@ -320,32 +327,37 @@ class TitleScene(Scene):
         self.selected = 0
         self.check = -1
         self.height = 200
-        # connect to db and get the top 10
-        self.db = MySQLdb.connect("tsuts.tskoli.is", "0403983099", "mypassword", "0403983099_highscores")
-        if self.db:
-            print "connected"
-        cursor = self.db.cursor()
-
-        sql = "SELECT name, score FROM data ORDER BY score DESC LIMIT 9"
-
+        self.toptext = ""
         try:
+            # connect to db and get the top 10
+            self.db = MySQLdb.connect("tsuts.tskoli.is", "0403983099", "mypassword", "0403983099_highscores")
+            if self.db:
+                print "connected"
+            cursor = self.db.cursor()
 
-            # Execute the SQL command
-            cursor.execute(sql)
-            # Fetch all the rows in a list of lists.
-            results = cursor.fetchall()
-            for row in results:
-                self.toptext = str(row[0]) + " scored: " + str(row[1])
-                self.height += 100
+            sql = "SELECT name, score FROM data ORDER BY score DESC LIMIT 9"
 
-                # Now print fetched result
-                print self.toptext
-                self.topten.append(self.sfont.render(self.toptext, True, (242, 242, 242, 255))), (self.height, 300)
+            try:
 
-        except Exception as e:
-            raise
+                # Execute the SQL command
+                cursor.execute(sql)
+                # Fetch all the rows in a list of lists.
+                results = cursor.fetchall()
+                for row in results:
+                    self.toptext = str(row[0]) + " scored: " + str(row[1])
+                    self.height += 100
 
-        self.db.close()
+                    # Now print fetched result
+                    print self.toptext
+                    self.topten.append(self.sfont.render(self.toptext, True, (242, 242, 242, 255))), (self.height, 300)
+
+            except Exception as e:
+                raise
+
+            self.db.close()
+        except Exception:
+            pass
+
 
     def render(self, screen):
         self.titletext = self.font.render('K' + u"\u00F6" + 'ttur og m' + u"\u00FA" + 's', True, tuple(self.color))
@@ -366,7 +378,10 @@ class TitleScene(Scene):
     def handle_events(self, events):
         for event in events:
             if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_RETURN):
-                self.mixer.fadeout(500)
+                try:
+                    self.mixer.fadeout(500)
+                except Exception:
+                    pass
                 self.manager.go_to(MoveMouseScene(self.selected))
             if event.type == KEYDOWN and event.key == K_ESCAPE:
                 pygame.event.post(pygame.event.Event(QUIT))
@@ -399,7 +414,10 @@ class TitleScene(Scene):
             if event.type == MOUSEBUTTONUP and event.button == 1:
                 if self.check >= 0 and self.difficultyText[self.check].rect.collidepoint(pygame.mouse.get_pos()) and not \
                 pygame.mouse.get_pressed()[0]:
-                    self.mixer.fadeout(500)
+                    try:
+                        self.mixer.fadeout(500)
+                    except Exception:
+                        pass
                     self.manager.go_to(MoveMouseScene(self.check))
                 else:
                     self.check = -1
@@ -407,11 +425,13 @@ class TitleScene(Scene):
 
 class GameOverScene(Scene):
     def __init__(self, level):
-                
-        self.mixer = pygame.mixer.Channel(0)
-        self.mixer.set_volume(0.5)
-        self.music = pygame.mixer.Sound(os.path.join('sounds', 'gameover.ogg'))
-        self.mixer.play(self.music)
+        try:
+            self.mixer = pygame.mixer.Channel(0)
+            self.mixer.set_volume(0.5)
+            self.music = pygame.mixer.Sound(os.path.join('sounds', 'gameover.ogg'))
+            self.mixer.play(self.music)
+        except Exception:
+            pass
         self.level = level
         font = pygame.font.SysFont('Consolas', 56)
         small_font = pygame.font.SysFont('Consolas', 32)
@@ -440,7 +460,10 @@ class GameOverScene(Scene):
         self.txtbx.update(events)
         for event in events:
             if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_ESCAPE):
-                self.mixer.fadeout(500)
+                try:
+                    self.mixer.fadeout(500)
+                except Exception:
+                    pass
                 self.manager.go_to(TitleScene())
 
 
@@ -454,18 +477,22 @@ class uploadToDb(object):
         self.text1 = font.render('score has been uploaded', True, WHITE)
         self.text2 = font.render("press space to go to menu", True, WHITE)
         self.string = font.render(str(self.name) + " scored " + str(self.level), True, WHITE)
+        try:
+            self.db = MySQLdb.connect("tsuts.tskoli.is", "0403983099", "mypassword", "0403983099_highscores")
+            if self.db:
+                print "connected"
+            cursor = self.db.cursor()
 
-        self.db = MySQLdb.connect("tsuts.tskoli.is", "0403983099", "mypassword", "0403983099_highscores")
-        if self.db:
-            print "connected"
-        cursor = self.db.cursor()
+            sql = """INSERT INTO data VALUES (%s,%s,%s)""", (0, str(self.name), str(self.level))
 
-        sql = """INSERT INTO data VALUES (%s,%s,%s)""", (0, str(self.name), str(self.level))
+            print "werks"
+            cursor.execute("""INSERT INTO data VALUES (%s,%s,%s)""", (0, str(self.name), str(self.level)))
+            self.db.commit()
+            self.db.close()
+        except Exception:
+            self.text1 = font.render('FAILED TO UPLOAD SCORE', True, WHITE)
+            pass
 
-        print "werks"
-        cursor.execute("""INSERT INTO data VALUES (%s,%s,%s)""", (0, str(self.name), str(self.level)))
-        self.db.commit()
-        self.db.close()
 
     def render(self, screen):
         screen.fill(BLACK)
@@ -479,5 +506,8 @@ class uploadToDb(object):
     def handle_events(self, events):
         for event in events:
             if event.type == KEYDOWN and event.key == K_SPACE:
-                self.mixer.fadeout(500)
+                try:
+                    self.mixer.fadeout(500)
+                except Exception:
+                    pass
                 self.manager.go_to(TitleScene())
